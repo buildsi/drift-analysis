@@ -31,7 +31,7 @@ class DriftAnalysis(Helicase):
             else:
                 # If the spec doesn't concretize properly we also want
                 # to record the commit at which this occurred.
-                spec.specs[spec] += [commit.hash]
+                self.specs[spec] += [commit.hash]
 
 def main():
     dt = datetime(2021, 1, 1)
