@@ -19,7 +19,5 @@ jobs:
         run: |
           git clone https://github.com/spack/spack.git
           git clone https://github.com/buildsi/helicase.git
-          cd helicase
-          pip3 install -e .
-          cd ..
+          pip3 install -e helicase/
           time python3 drift.py spack/

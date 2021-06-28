@@ -1,4 +1,4 @@
-from helicase import Helicase
+from helicase.helicase import Helicase
 from datetime import *
 import json
 import subprocess, sys
