@@ -34,10 +34,10 @@ class DriftAnalysis(Helicase):
                 spec.specs[spec] += [commit.hash]
 
 def main():
-    dt = datetime(2021, 6, 20)
+    dt = datetime(2020, 6, 1)
     now = datetime.now()
 
-    da = DriftAnalysis(["abyss", "jasper", "bedops"])
+    da = DriftAnalysis(["abyss"])
     da.traverse(sys.argv[1], since=dt, to=now, checkout=True)
     print(json.dumps(da.specs))
 
