@@ -25,4 +25,4 @@ jobs:
 
       - name: Run Analysis
         run: |
-          time python3 drift.py spack/
+          time python3 drift.py ../spack/
