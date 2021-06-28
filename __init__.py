@@ -1,1 +1,1 @@
-from helicase import Helicase
+from .helicase import Helicase
