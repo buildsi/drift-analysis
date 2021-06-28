@@ -16,4 +16,6 @@ jobs:
       - name: Run Analysis
         run: |
           git clone https://github.com/spack/spack.git
+          git clone https://github.com/buildsi/helicase.git
+          pip3 install -e helicase/
           time python3 drift.py spack/
