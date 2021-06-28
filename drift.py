@@ -34,7 +34,7 @@ class DriftAnalysis(Helicase):
                 spec.specs[spec] += [commit.hash]
 
 def main():
-    dt = datetime(2020, 6, 1)
+    dt = datetime(2021, 1, 1)
     now = datetime.now()
 
     da = DriftAnalysis(["abyss"])
