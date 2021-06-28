@@ -1,4 +1,4 @@
-from helicase.helicase import Helicase
+from helicase import Helicase
 from datetime import *
 import json
 import subprocess, sys
@@ -34,7 +34,7 @@ class DriftAnalysis(Helicase):
                 self.specs[spec] += [commit.hash]
 
 def main():
-    dt = datetime(2021, 1, 1)
+    dt = datetime(2021, 6, 28)
     now = datetime.now()
 
     da = DriftAnalysis(["abyss"])
