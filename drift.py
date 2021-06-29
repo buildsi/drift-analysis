@@ -102,7 +102,7 @@ class DriftAnalysis(Helicase):
                 self.specs[spec] += [result]
 
 def main():
-    dt = datetime(2021, 5, 1)
+    dt = datetime(2021, 6, 24)
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])

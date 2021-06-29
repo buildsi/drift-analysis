@@ -1,4 +1,4 @@
-name: Publish Container Image
+name: Drift Analysis
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   run_analysis:
-    name: Push Docker image to GitHub Container Registry
+    name: Drift Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -25,4 +25,4 @@ jobs:
 
       - name: Run Analysis
         run: |
-          time python3 drift.py ../spack/ abyss
+          python3 drift.py ../spack/ abyss
