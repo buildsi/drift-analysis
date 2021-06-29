@@ -106,7 +106,7 @@ def main():
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])
-    da.traverse(sys.argv[1], since=dt, to=now, checkout=True)
+    da.traverse(sys.argv[1], since=dt, to=now, checkout=True, printTrial=True)
     output = {}
     for spec in da.specs:
         for result in da.specs[spec]:
