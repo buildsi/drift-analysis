@@ -58,7 +58,7 @@ class DriftAnalysis(Helicase):
                         for name, dep in concrete_spec[i].items():
                             # Check if a dependency version is different.
                             if dep["full_hash"] != cache_map[name]["full_hash"] \
-                                and name != spec and "dep-update" not in result.tags:
+                                and name != spec and "dep-updated" not in result.tags:
                                 result.tags += ["dep-updated"]
                             # Check if a dependency has been added.
                             if name not in cache_map and "dep-added" not in result.tags:
