@@ -12,9 +12,14 @@ def spack(command):
     return result
 
 class Result:
-    commit = ""
-    tags = []
-    spec = ""
+    commit:str
+    tags:list
+    spec:str
+
+    def __init__(self):
+        self.commit = ""
+        self.tags = []
+        self.spec = ""
 
 
 class DriftAnalysis(Helicase):
@@ -24,6 +29,7 @@ class DriftAnalysis(Helicase):
         for spec in specs:
             self.specs[spec] = []
             self.last[spec] = ""
+
     def analyze(self, commit):
         for spec in self.specs:
             out = spack("spec --json " + spec)
@@ -51,10 +57,11 @@ class DriftAnalysis(Helicase):
                     for i in range(len(concrete_spec)):
                         for name, dep in concrete_spec[i].items():
                             # Check if a dependency version is different.
-                            if dep["full_hash"] != cache_map[name]["full_hash"] and name != spec:
+                            if dep["full_hash"] != cache_map[name]["full_hash"] \
+                                and name != spec and "dep-update" not in result.tags:
                                 result.tags += ["dep-updated"]
                             # Check if a dependency has been added.
-                            if name not in cache_map:
+                            if name not in cache_map and "dep-added" not in result.tags:
                                 result.tags += ["dep-added"]
                             # Remove dependency from known dependencies to track if we don't hit any
                             # dependencies in the new version that use to be in the old spec.
@@ -72,22 +79,22 @@ class DriftAnalysis(Helicase):
                         # Check for variants added or modified by comparing new spec to old.
                         for param, value in concrete_spec[0][spec]["parameters"].items():
                             if param not in self.last[spec][0][spec]["parameters"]:
-                                if param == "patches":
+                                if param == "patches" and "patches-added" not in result.tags:
                                     result.tags += ["patches-added"]
-                                else:
+                                elif "variant-added" not in result.tags:
                                     result.tags += ["variant-added"]
                             if value != self.last[spec][0][spec]["parameters"][param]:
-                                if param == "patches":
+                                if param == "patches" and "patches-modified" not in result.tags:
                                     result.tags += ["patches-modified"]
-                                else:
+                                elif "variant-modified" not in result.tags:
                                     result.tags += ["variant-modified"]
 
                         # Compare old to new to see if any variants were removed.
                         for param, value in self.last[spec][0][spec]["parameters"].items():
                             if param not in concrete_spec[0][spec]["parameters"]:
-                                if param == "patches":
+                                if param == "patches" and "patches-removed" not in result.tags:
                                     result.tags += ["patches-removed"]
-                                else:
+                                elif "variant-removed" not in result.tags:
                                     result.tags += ["variant-removed"]
 
 
@@ -102,15 +109,15 @@ class DriftAnalysis(Helicase):
                 self.specs[spec] += [result]
 
 def main():
-    dt = datetime(2021, 6, 24)
+    dt = datetime(2021, 5, 1)
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])
     da.traverse(sys.argv[1], since=dt, to=now, checkout=True, printTrial=True)
     output = {}
     for spec in da.specs:
+        output[spec] = {}
         for result in da.specs[spec]:
-            output[spec] = {}
             output[spec][result.commit] = result.tags
 
     print(json.dumps(output))
