@@ -43,73 +43,75 @@ class DriftAnalysis(Helicase):
                     # Check if the package version is different.
                     if self.last[spec][0][spec]["version"] != concrete_spec[0][spec]["version"]:
                         result.tags += ["pkg-updated"]
-
                     # +---------------------+
                     # |     Dependencies    |
                     # +---------------------+
-                    # Build dependency cache map for the last spec.
-                    cache_map = {}
-                    for i in range(len(self.last[spec])):
-                        for name, dep in self.last[spec][i].items():
-                            cache_map[name] = dep
-
-                    # Iterate through all of the dependencies in the new spec.
-                    for i in range(len(concrete_spec)):
-                        for name, dep in concrete_spec[i].items():
-                            # Check if a dependency version is different.
-                            if dep["full_hash"] != cache_map[name]["full_hash"] \
-                                and name != spec and "dep-updated" not in result.tags:
-                                result.tags += ["dep-updated"]
-                            # Check if a dependency has been added.
-                            if name not in cache_map and "dep-added" not in result.tags:
-                                result.tags += ["dep-added"]
-                            # Remove dependency from known dependencies to track if we don't hit any
-                            # dependencies in the new version that use to be in the old spec.
-                            cache_map.pop(name)
-                    
-                    # If there are dependencies that we didn't hit in the new version mark
-                    # the commit has having lost dependencies.
-                    if len(cache_map) > 0:
-                        result.tags += ["dep-deleted"]
-
+                    result.tags += self.tag_deps(concrete_spec, spec)
                     # +---------------------+
                     # |      Variants       |
                     # +---------------------+
-                    if "parameters" in concrete_spec[0][spec]:
-                        # Check for variants added or modified by comparing new spec to old.
-                        for param, value in concrete_spec[0][spec]["parameters"].items():
-                            if param not in self.last[spec][0][spec]["parameters"]:
-                                if param == "patches" and "patches-added" not in result.tags:
-                                    result.tags += ["patches-added"]
-                                elif "variant-added" not in result.tags:
-                                    result.tags += ["variant-added"]
-                            if value != self.last[spec][0][spec]["parameters"][param]:
-                                if param == "patches" and "patches-modified" not in result.tags:
-                                    result.tags += ["patches-modified"]
-                                elif "variant-modified" not in result.tags:
-                                    result.tags += ["variant-modified"]
-
-                        # Compare old to new to see if any variants were removed.
-                        for param, value in self.last[spec][0][spec]["parameters"].items():
-                            if param not in concrete_spec[0][spec]["parameters"]:
-                                if param == "patches" and "patches-removed" not in result.tags:
-                                    result.tags += ["patches-removed"]
-                                elif "variant-removed" not in result.tags:
-                                    result.tags += ["variant-removed"]
-
-
+                    result.tags += self.tag_variants(concrete_spec, spec)
                     # Add commit to list of inflection point commits.
                     self.specs[spec] += [result]
-
                 # Save concrete spec hash as last hash.
                 self.last[spec] = concrete_spec
             else:
                 # If the spec doesn't concretize properly we also want
                 # to record the commit at which this occurred.
-                self.specs[spec] += [result]
+                self.specs[spec] += [set(result)]
+
+    def tag_deps(self, concrete_spec, spec):
+        tags = []
+        # Build dependency cache map for the last spec.
+        cache_map = {}
+        for i in range(len(self.last[spec])):
+            for name, dep in self.last[spec][i].items():
+                cache_map[name] = dep
+        # Iterate through all of the dependencies in the new spec.
+        for i in range(len(concrete_spec)):
+            for name, dep in concrete_spec[i].items():
+                # Check if a dependency version is different.
+                if dep["full_hash"] != cache_map[name]["full_hash"] \
+                    and name != spec and "dep-updated":
+                    tags += ["dep-updated"]
+                # Check if a dependency has been added.
+                if name not in cache_map and "dep-added":
+                    tags += ["dep-added"]
+                # Remove dependency from known dependencies to track if we don't hit any
+                # dependencies in the new version that use to be in the old spec.
+                cache_map.pop(name)
+        # If there are dependencies that we didn't hit in the new version mark
+        # the commit has having lost dependencies.
+        if len(cache_map) > 0:
+            tags += ["dep-deleted"]
+        return tags
+
+    def tag_variants(self, concrete_spec, spec):
+        tags = []
+        if "parameters" in concrete_spec[0][spec]:
+            # Check for variants added or modified by comparing new spec to old.
+            for param, value in concrete_spec[0][spec]["parameters"].items():
+                if param not in self.last[spec][0][spec]["parameters"]:
+                    if param == "patches" and "patches-added":
+                        tags += ["patches-added"]
+                    elif "variant-added":
+                        tags += ["variant-added"]
+                if value != self.last[spec][0][spec]["parameters"][param]:
+                    if param == "patches" and "patches-modified":
+                        tags += ["patches-modified"]
+                    elif "variant-modified":
+                        tags += ["variant-modified"]
+            # Compare old to new to see if any variants were removed.
+            for param, value in self.last[spec][0][spec]["parameters"].items():
+                if param not in concrete_spec[0][spec]["parameters"]:
+                    if param == "patches" and "patches-removed":
+                        tags += ["patches-removed"]
+                    elif "variant-removed":
+                        tags += ["variant-removed"]
+            return tags
 
 def main():
-    dt = datetime(2021, 5, 1)
+    dt = datetime(2021, 6, 24)
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])
