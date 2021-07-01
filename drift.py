@@ -71,11 +71,10 @@ class DriftAnalysis(Helicase):
         for i in range(len(concrete_spec)):
             for name, dep in concrete_spec[i].items():
                 # Check if a dependency version is different.
-                if dep["full_hash"] != cache_map[name]["full_hash"] \
-                    and name != spec and "dep-updated":
+                if dep["full_hash"] != cache_map[name]["full_hash"] and name != spec:
                     tags += ["dep-updated"]
                 # Check if a dependency has been added.
-                if name not in cache_map and "dep-added":
+                if name not in cache_map:
                     tags += ["dep-added"]
                 # Remove dependency from known dependencies to track if we don't hit any
                 # dependencies in the new version that use to be in the old spec.
@@ -92,21 +91,21 @@ class DriftAnalysis(Helicase):
             # Check for variants added or modified by comparing new spec to old.
             for param, value in concrete_spec[0][spec]["parameters"].items():
                 if param not in self.last[spec][0][spec]["parameters"]:
-                    if param == "patches" and "patches-added":
+                    if param == "patches":
                         tags += ["patches-added"]
-                    elif "variant-added":
+                    else:
                         tags += ["variant-added"]
                 if value != self.last[spec][0][spec]["parameters"][param]:
-                    if param == "patches" and "patches-modified":
+                    if param == "patches":
                         tags += ["patches-modified"]
-                    elif "variant-modified":
+                    else:
                         tags += ["variant-modified"]
             # Compare old to new to see if any variants were removed.
             for param, value in self.last[spec][0][spec]["parameters"].items():
                 if param not in concrete_spec[0][spec]["parameters"]:
-                    if param == "patches" and "patches-removed":
+                    if param == "patches":
                         tags += ["patches-removed"]
-                    elif "variant-removed":
+                    else:
                         tags += ["variant-removed"]
             return tags
 
