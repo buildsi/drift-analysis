@@ -70,12 +70,13 @@ class DriftAnalysis(Helicase):
         # Iterate through all of the dependencies in the new spec.
         for i in range(len(concrete_spec)):
             for name, dep in concrete_spec[i].items():
-                # Check if a dependency version is different.
-                if dep["full_hash"] != cache_map[name]["full_hash"] and name != spec:
-                    tags += ["dep-updated"]
                 # Check if a dependency has been added.
                 if name not in cache_map:
                     tags += ["dep-added"]
+                    continue
+                # Check if a dependency version is different.
+                elif dep["full_hash"] != cache_map[name]["full_hash"] and name != spec:
+                    tags += ["dep-updated"]
                 # Remove dependency from known dependencies to track if we don't hit any
                 # dependencies in the new version that use to be in the old spec.
                 cache_map.pop(name)
@@ -95,7 +96,7 @@ class DriftAnalysis(Helicase):
                         tags += ["patches-added"]
                     else:
                         tags += ["variant-added"]
-                if value != self.last[spec][0][spec]["parameters"][param]:
+                elif value != self.last[spec][0][spec]["parameters"][param]:
                     if param == "patches":
                         tags += ["patches-modified"]
                     else:
@@ -123,4 +124,5 @@ def main():
 
     print(json.dumps(output))
 
-main()
+if __name__ == "__main__":
+    main()
