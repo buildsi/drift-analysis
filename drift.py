@@ -46,11 +46,11 @@ class DriftAnalysis(Helicase):
                     # +---------------------+
                     # |     Dependencies    |
                     # +---------------------+
-                    result.tags += self.tag_deps(concrete_spec, spec)
+                    result.tags += set(self.tag_deps(concrete_spec, spec))
                     # +---------------------+
                     # |      Variants       |
                     # +---------------------+
-                    result.tags += self.tag_variants(concrete_spec, spec)
+                    result.tags += set(self.tag_variants(concrete_spec, spec))
                     # Add commit to list of inflection point commits.
                     self.specs[spec] += [result]
                 # Save concrete spec hash as last hash.
@@ -58,7 +58,7 @@ class DriftAnalysis(Helicase):
             else:
                 # If the spec doesn't concretize properly we also want
                 # to record the commit at which this occurred.
-                self.specs[spec] += [set(result)]
+                self.specs[spec] += [result]
 
     def tag_deps(self, concrete_spec, spec):
         tags = []
@@ -111,18 +111,11 @@ class DriftAnalysis(Helicase):
             return tags
 
 def main():
-    dt = datetime(2021, 6, 24)
+    dt = datetime(2021, 5, 24)
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])
     da.traverse(sys.argv[1], since=dt, to=now, checkout=True, printTrial=True)
-    output = {}
-    for spec in da.specs:
-        output[spec] = {}
-        for result in da.specs[spec]:
-            output[spec][result.commit] = result.tags
-
-    print(json.dumps(output))
 
 if __name__ == "__main__":
     main()
