@@ -12,22 +12,24 @@ def spack(command):
     return result
 
 class Result:
+    abstract:str
     commit:str
     tags:list
     spec:str
 
     def __init__(self):
+        self.abstract = ""
         self.commit = ""
         self.tags = []
         self.spec = ""
 
 
 class DriftAnalysis(Helicase):
-    specs = {}
+    specs = []
     last = {}
     def __init__(self, specs):
+        self.specs = specs
         for spec in specs:
-            self.specs[spec] = []
             self.last[spec] = ""
 
     def analyze(self, commit):
@@ -35,6 +37,7 @@ class DriftAnalysis(Helicase):
             out = spack("spec --json " + spec)
             result = Result()
             result.commit = commit.hash
+            result.abstract = spec
             if out.returncode == SUCCESS:
                 concrete_spec = json.loads(out.stdout)["spec"]
                 # In the case that the concretized spec hash changes
@@ -51,14 +54,15 @@ class DriftAnalysis(Helicase):
                     # |      Variants       |
                     # +---------------------+
                     result.tags += set(self.tag_variants(concrete_spec, spec))
-                    # Add commit to list of inflection point commits.
-                    self.specs[spec] += [result]
+                    # Send Inflection Point
+                    send(result)
                 # Save concrete spec hash as last hash.
                 self.last[spec] = concrete_spec
             else:
                 # If the spec doesn't concretize properly we also want
                 # to record the commit at which this occurred.
-                self.specs[spec] += [result]
+                result.tags += ["concretizaton-failed"]
+                send(result)
 
     def tag_deps(self, concrete_spec, spec):
         tags = []
@@ -109,9 +113,17 @@ class DriftAnalysis(Helicase):
                     else:
                         tags += ["variant-removed"]
             return tags
+    
+def send(result:Result):
+    output = {}
+    output["commit"] = {"digest":result.commit}
+    output["tags"] = result.tags
+    output["package"] = result.abstract
+
+    print(json.dumps(output), flush=True)
 
 def main():
-    dt = datetime(2021, 5, 24)
+    dt = datetime(2021, 5, 1)
     now = datetime.now()
 
     da = DriftAnalysis([sys.argv[2]])
