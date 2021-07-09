@@ -40,7 +40,7 @@ class DriftAnalysis(Helicase):
         for spec in self.specs:
             out = spack("spec --json " + spec)
             verToken = spec.find("@")
-            if verToken < 0: verToken = len(result.abstract)
+            if verToken < 0: verToken = len(spec)
             name = spec[:verToken]
             result = Result()
             result.commit = commit.hash
