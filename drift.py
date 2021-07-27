@@ -1,15 +1,12 @@
 from helicase import Helicase
 from datetime import *
-import json
+import argparse
+import json, requests
 import subprocess, sys
 
 # Define SUCCESS for comparing command return codes.
 SUCCESS = 0
-
-def spack(command):
-    result = subprocess.run([sys.argv[1] + "/bin/spack"] + command.split(), 
-        capture_output=True, text=True)
-    return result
+args = None
 
 class Result:
     abstract:str
@@ -132,14 +129,48 @@ def send(result:Result):
         output["tags"] += [{"name": tag}]
     output["package"] = {"name": result.abstract, "version": result.version}
 
+    r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
     print(json.dumps(output), flush=True)
+    print(r.status_code)
+
+def spack(command):
+    result = subprocess.run([args.repo + "/bin/spack"] + command.split(), 
+        capture_output=True, text=True)
+    return result
 
 def main():
-    dt = datetime(2021, 6, 1)
-    now = datetime.now()
+    # Setup Argument Parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host")
+    parser.add_argument("--username")
+    parser.add_argument("--password")
+    parser.add_argument("--repo")
+    parser.add_argument("--since-commit")
+    parser.add_argument("--since")
+    parser.add_argument("--to-commit")
+    parser.add_argument("--to")
+    parser.add_argument("--specs")
+    # Parse Arguments
+    global args 
+    args = parser.parse_args()
+    # Define program parameters
+    since = None
+    to = None
+    since_commit = None
+    to_commit = None
+    if args.since != None:
+        data = args.since.split("/")
+        since = datetime(int(data[2]), int(data[0]), int(data[1]))
+    if args.to != None:
+        data = args.since.split("/")
+        to = datetime(int(data[2]), int(data[0]), int(data[1])) 
+    if args.since_commit != None:
+        since_commit = args.since_commit
+    if args.to_commit != None:
+        to_commit = args.to_commit
 
-    da = DriftAnalysis([sys.argv[2]])
-    da.traverse(sys.argv[1], since=dt, to=now, checkout=True, printTrial=True)
+    da = DriftAnalysis([args.specs])
+    da.traverse(args.repo, since=since, to=to, from_commit=since_commit, to_commit=to_commit, checkout=True, printTrial=True)
 
 if __name__ == "__main__":
     main()

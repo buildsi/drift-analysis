@@ -1,0 +1,32 @@
+description:
+    name: drift_analysis
+    description: A simple study to learn about package drift within the Spack Repository.
+
+batch:
+    type:  slurm
+    queue: pbatch
+    host:  oslic
+
+study:
+    - name: run-analysis
+      description: Search for Inflection Point within Spack.
+      run:
+          cmd: |
+            git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)
+            cd projects/drift-analysis/
+            python3 drift.py \
+                    --host="" \
+                    --username="" \
+                    --password="" \
+                    --repo=/dev/shm/spack-$(SPEC) \
+                    --from-commit="" \
+                    --to-commit="" \
+                    --spec=$(SPEC) \
+          nodes: 1
+          procs: 1
+          walltime: "00:02:00"
+
+global.parameters:
+    SPEC:
+        values: [abyss]
+        label: SPEC.%%
