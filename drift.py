@@ -30,6 +30,7 @@ class DriftAnalysis(Helicase):
             # Don't attempt to concretize if the version doesn't yet exist.
             if abstract_spec[verToken+1:] in out.stdout:
                 out = run(f"spack spec --yaml {abstract_spec}")
+                # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
                     concrete_spec = spack.spec.Spec().from_yaml(out.stdout)
                     if abstract_spec in self.last and self.last[abstract_spec] != concrete_spec:
@@ -45,6 +46,7 @@ class DriftAnalysis(Helicase):
                         send(result)
                     # Save concrete spec as last spec
                     self.last[abstract_spec] = concrete_spec
+                # Mark failing concretization points.
                 else:
                     # Construct Result
                         result = Result(
