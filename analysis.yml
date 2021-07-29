@@ -21,12 +21,14 @@ study:
                     --repo=/dev/shm/spack-$(SPEC) \
                     --from-commit="" \
                     --to-commit="" \
-                    --spec=$(SPEC) \
+                    --spec=$(SPEC)
+            rm -rf /dev/shm/spack-$(SPEC)
           nodes: 1
           procs: 1
-          walltime: "00:02:00"
+          cores per task: 1
+          walltime: "01:00:00"
 
 global.parameters:
     SPEC:
-        values: [abyss]
+        values: [abyss, zlib]
         label: SPEC.%%
