@@ -25,6 +25,7 @@ class DriftAnalysis(Helicase):
 
     def analyze(self, commit):
         for abstract_spec in self.specs:
+            tags = []
             # Separate out spec version and name.
             verToken = abstract_spec.find("@")
             if verToken < 0: verToken = len(abstract_spec)
@@ -35,31 +36,29 @@ class DriftAnalysis(Helicase):
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
                     concrete_spec = spack.spec.Spec().from_yaml(out.stdout)
-                    if abstract_spec in self.last and self.last[abstract_spec] != concrete_spec:
-                        # Construct Result
-                        diff = spack.cmd.diff.compare_specs(self.last[abstract_spec], concrete_spec, colorful=False)
-                        result = Result(
-                            abstract_spec[:verToken],
-                            abstract_spec[verToken+1:],
-                            commit.hash,
-                            # Waiting for spack diff to complete tags.
-                            diff['b_not_a'],
-                            str(commit.author_date))
-                        # Send result to drift-server
-                        send(result)
-                    # Save concrete spec as last spec
+                    # If the spec is the same move on.
+                    if abstract_spec not in self.last or self.last[abstract_spec] == concrete_spec:
+                        continue
+                    # If the spec is different check what is different and save as tags.
+                    diff = spack.cmd.diff.compare_specs(
+                        self.last[abstract_spec],
+                        concrete_spec,
+                        colorful=False)
+                    tags = diff['b_not_a']
+                    # Save concrete spec as last spec.
                     self.last[abstract_spec] = concrete_spec
                 # Mark failing concretization points.
                 else:
-                    # Construct Result
-                        result = Result(
-                            abstract_spec[:verToken],
-                            abstract_spec[verToken+1:],
-                            commit.hash,
-                            [("concretization-failed","")],
-                            str(commit.author_date))
-                        # Send result to drift-server
-                        send(result)
+                    tags = [("concretization-failed","")]
+                # Construct Result
+                result = Result(
+                    abstract_spec[:verToken],
+                    abstract_spec[verToken+1:],
+                    commit.hash,
+                    tags,
+                    str(commit.author_date))
+                # Send result to drift-server
+                send(result)
     
 def send(result:Result):
     output = {}
