@@ -3,6 +3,7 @@ from datetime import datetime
 from helicase import Helicase
 from requests import post
 from spack import *
+import spack.cmd.diff
 from subprocess import run as subprocess_run
 
 # Define SUCCESS for comparing command return codes.
@@ -36,12 +37,13 @@ class DriftAnalysis(Helicase):
                     concrete_spec = spack.spec.Spec().from_yaml(out.stdout)
                     if abstract_spec in self.last and self.last[abstract_spec] != concrete_spec:
                         # Construct Result
+                        diff = spack.cmd.diff.compare_specs(self.last[abstract_spec], concrete_spec, colorful=False)
                         result = Result(
                             abstract_spec[:verToken],
                             abstract_spec[verToken+1:],
                             commit.hash,
                             # Waiting for spack diff to complete tags.
-                            [],
+                            diff['b_not_a'],
                             str(commit.author_date))
                         # Send result to drift-server
                         send(result)
@@ -54,7 +56,7 @@ class DriftAnalysis(Helicase):
                             abstract_spec[:verToken],
                             abstract_spec[verToken+1:],
                             commit.hash,
-                            ["concretization-failed"],
+                            [("concretization-failed","")],
                             str(commit.author_date))
                         # Send result to drift-server
                         send(result)
