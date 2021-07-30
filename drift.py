@@ -1,8 +1,9 @@
-from helicase import Helicase
+from argparse import ArgumentParser
 from datetime import datetime
+from helicase import Helicase
+from requests import post
 from spack import *
-import json, requests, argparse
-import subprocess, sys
+from subprocess import run as subprocess_run
 
 # Define SUCCESS for comparing command return codes.
 SUCCESS = 0
@@ -71,13 +72,13 @@ def send(result:Result):
     print(r.status_code)
 
 def run(command):
-    result = subprocess.run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:], 
+    result = subprocess_run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:], 
         capture_output=True, text=True)
     return result
 
 def main():
     # Setup Argument Parsing
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
     parser.add_argument("--host")
     parser.add_argument("--username")
     parser.add_argument("--password")
