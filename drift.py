@@ -1,22 +1,24 @@
+import json
 from argparse import ArgumentParser
+from dataclasses import dataclass
 from datetime import datetime
-from helicase import Helicase
-from requests import post
-from spack import *
-import spack.cmd.diff
 from subprocess import run as subprocess_run
+
+import requests
+from helicase import Helicase
+from spack import *
+from spack.cmd.diff import compare_specs
 
 # Define SUCCESS for comparing command return codes.
 SUCCESS = 0
-
+# Define result dataclass
+@dataclass
 class Result:
-    def __init__(self, name, version, commit, tags, timestamp):
-        self.name = ""
-        self.commit = ""
-        self.tags = []
-        self.timestamp = ""
-        self.version = ""
-
+    name:str
+    version:str
+    commit:str
+    tags:list
+    timestamp:str
 
 class DriftAnalysis(Helicase):
     def __init__(self, specs=None):
@@ -28,22 +30,24 @@ class DriftAnalysis(Helicase):
             tags = []
             # Separate out spec version and name.
             name = abstract_spec
-            version = None
+            version = ""
             if "@" in abstract_spec:
                 name, version = abstract_spec.split("@", 1)
             # Check that version exists in package.py file.
             out = run(f"spack versions --safe-only {abstract_spec}")
             # Don't attempt to concretize if the version doesn't yet exist.
-            if abstract_spec[verToken+1:] in out.stdout:
+            if version in out.stdout:
                 out = run(f"spack spec --yaml {abstract_spec}")
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
                     concrete_spec = spack.spec.Spec().from_yaml(out.stdout)
                     # If the spec is the same move on.
-                    if abstract_spec not in self.last or self.last[abstract_spec] == concrete_spec:
+                    if abstract_spec not in self.last:
+                        self.last[abstract_spec] = concrete_spec
+                    if self.last[abstract_spec] == concrete_spec:
                         continue
                     # If the spec is different check what is different and save as tags.
-                    diff = spack.cmd.diff.compare_specs(
+                    diff = compare_specs(
                         self.last[abstract_spec],
                         concrete_spec,
                         colorful=False)
@@ -53,7 +57,7 @@ class DriftAnalysis(Helicase):
                     self.last[abstract_spec] = concrete_spec
                 # Mark failing concretization points.
                 else:
-                    tags = [("concretization-failed","")]
+                    tags = ["concretization-failed"]
                 # Construct Result
                 result = Result(
                     name,
@@ -67,7 +71,7 @@ class DriftAnalysis(Helicase):
 def send(result:Result):
     output = {}
     output["commit"] = {"digest":result.commit, "timestamp":result.timestamp}
-    output["tags"] = [{"name": x} for x in tags]
+    output["tags"] = [{"name": x} for x in result.tags]
     output["package"] = {"name": result.name, "version": result.version}
 
     r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
