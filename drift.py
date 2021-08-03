@@ -27,8 +27,11 @@ class DriftAnalysis(Helicase):
         for abstract_spec in self.specs:
             tags = []
             # Separate out spec version and name.
-            verToken = abstract_spec.find("@")
-            if verToken < 0: verToken = len(abstract_spec)
+            name = abstract_spec
+            version = None
+            if "@" in abstract_spec:
+                name, version = abstract_spec.split("@", 1)
+            # Check that version exists in package.py file.
             out = run(f"spack versions --safe-only {abstract_spec}")
             # Don't attempt to concretize if the version doesn't yet exist.
             if abstract_spec[verToken+1:] in out.stdout:
@@ -44,7 +47,8 @@ class DriftAnalysis(Helicase):
                         self.last[abstract_spec],
                         concrete_spec,
                         colorful=False)
-                    tags = diff['b_not_a']
+                    # Flatten list to tags with context.
+                    tags = ["%s:%s" %(x[0],x[1]) for x in diff['b_not_a']]
                     # Save concrete spec as last spec.
                     self.last[abstract_spec] = concrete_spec
                 # Mark failing concretization points.
@@ -52,8 +56,8 @@ class DriftAnalysis(Helicase):
                     tags = [("concretization-failed","")]
                 # Construct Result
                 result = Result(
-                    abstract_spec[:verToken],
-                    abstract_spec[verToken+1:],
+                    name,
+                    version,
                     commit.hash,
                     tags,
                     str(commit.author_date))
@@ -63,9 +67,7 @@ class DriftAnalysis(Helicase):
 def send(result:Result):
     output = {}
     output["commit"] = {"digest":result.commit, "timestamp":result.timestamp}
-    output["tags"] = []
-    for tag in result.tags:
-        output["tags"] += [{"name": tag}]
+    output["tags"] = [{"name": x} for x in tags]
     output["package"] = {"name": result.name, "version": result.version}
 
     r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
