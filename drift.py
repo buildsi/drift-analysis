@@ -27,7 +27,6 @@ class DriftAnalysis(Helicase):
 
     def analyze(self, commit):
         for abstract_spec in self.specs:
-            tags = []
             # Separate out spec version and name.
             name = abstract_spec
             version = ""
