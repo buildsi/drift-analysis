@@ -21,7 +21,7 @@ study:
                     --repo=/dev/shm/spack-$(SPEC) \
                     --from-commit="" \
                     --to-commit="" \
-                    --spec=$(SPEC)
+                    --spec="$(SPEC)"
             rm -rf /dev/shm/spack-$(SPEC)
           nodes: 1
           procs: 1

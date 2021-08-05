@@ -6,12 +6,13 @@ from subprocess import run as subprocess_run
 
 import requests
 from helicase import Helicase
-from spack import *
 from spack.cmd.diff import compare_specs
+from spack.spec import Spec
+from spack.version import ver
 
 # Define SUCCESS for comparing command return codes.
 SUCCESS = 0
-# Define result dataclass
+
 @dataclass
 class Result:
     name:str
@@ -22,24 +23,36 @@ class Result:
 
 class DriftAnalysis(Helicase):
     def __init__(self, specs=None):
+        """Setup the last cache and specs used for the analysis."""
+
         self.last = {}
         self.specs = specs or []
 
     def analyze(self, commit):
+        """Analyze defines the process that should be run on every commit
+           and for every abstract spec. This is used to determine if the 
+           commit is an "inflection point". Inflection points occur when
+           the concretization for an abstract spec changes. This most 
+           often happens when a package updates or one of its dependencies
+           update leading to a different installation for the same input
+           abstract spec."""
+
         for abstract_spec in self.specs:
-            # Separate out spec version and name.
-            name = abstract_spec
-            version = ""
-            if "@" in abstract_spec:
-                name, version = abstract_spec.split("@", 1)
+            # Create spec for parsing info
+            spec = Spec(abstract_spec)
+
             # Check that version exists in package.py file.
             out = run(f"spack versions --safe-only {abstract_spec}")
+            known_versions = set([ver(v) for v in re.split(r"\s+", out.strip())])
+
             # Don't attempt to concretize if the version doesn't yet exist.
-            if version in out.stdout:
+            if spec.version in known_versions:
                 out = run(f"spack spec --yaml {abstract_spec}")
+
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
-                    concrete_spec = spack.spec.Spec().from_yaml(out.stdout)
+                    concrete_spec = Spec.from_yaml(out.stdout)
+
                     # If the spec is the same move on.
                     if abstract_spec not in self.last:
                         self.last[abstract_spec] = concrete_spec
@@ -54,25 +67,33 @@ class DriftAnalysis(Helicase):
                     tags = ["%s:%s" %(x[0],x[1]) for x in diff['b_not_a']]
                     # Save concrete spec as last spec.
                     self.last[abstract_spec] = concrete_spec
-                # Mark failing concretization points.
+
                 else:
+                    # Mark failing concretization points.
                     tags = ["concretization-failed"]
+
                 # Construct Result
                 result = Result(
-                    name,
-                    version,
+                    spec.name,
+                    spec.version,
                     commit.hash,
                     tags,
                     str(commit.author_date))
+
                 # Send result to drift-server
                 send(result)
     
 def send(result:Result):
+    """Send reformats the input result and attempts to upload the data as
+       as a json message to the supplied drift server."""
+
+    # Reformat the inputted result object into the expected json.
     output = {}
     output["commit"] = {"digest":result.commit, "timestamp":result.timestamp}
     output["tags"] = [{"name": x} for x in result.tags]
     output["package"] = {"name": result.name, "version": result.version}
 
+    # Upload json data to the drift server.
     r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
     print(json.dumps(output), flush=True)
     print(r.status_code)
@@ -94,10 +115,12 @@ def main():
     parser.add_argument("--to-commit")
     parser.add_argument("--to")
     parser.add_argument("--specs")
+
     # Parse Arguments
     global args 
     args = parser.parse_args()
-    # Define program parameters
+
+    # Define program parameter defaults
     since = None
     to = None
     since_commit = None
@@ -112,13 +135,22 @@ def main():
         since_commit = args.since_commit
     if args.to_commit != None:
         to_commit = args.to_commit
-
+    
+    # If specs are actually defined split them up based on commas.
     specs = None
     if args.specs != None:
-        specs = args.specs.split()
+        specs = args.specs.split(",")
+
     # Create new Drift Analysis
     da = DriftAnalysis(specs)
-    da.traverse(args.repo, since=since, to=to, from_commit=since_commit, to_commit=to_commit, checkout=True, printTrial=True)
+    da.traverse(args.repo, 
+        since=since,
+        to=to,
+        from_commit=since_commit,
+        to_commit=to_commit,
+        checkout=True,
+        printTrial=True,
+    )
 
 if __name__ == "__main__":
     main()
