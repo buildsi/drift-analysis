@@ -58,13 +58,17 @@ class DriftAnalysis(Helicase):
                         self.last[abstract_spec] = concrete_spec
                     if self.last[abstract_spec] == concrete_spec:
                         continue
+
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
                         self.last[abstract_spec],
                         concrete_spec,
-                        colorful=False)
+                        color=False)
+
                     # Flatten list to tags with context.
-                    tags = ["%s:%s" %(x[0],x[1]) for x in diff['b_not_a']]
+                    tags = ["added:%s:%s" %(x[0],x[1]) for x in diff['b_not_a']]
+                    tags += ["removed:%s:%s" %(x[0],x[1]) for x in diff['a_not_b']]
+
                     # Save concrete spec as last spec.
                     self.last[abstract_spec] = concrete_spec
 
