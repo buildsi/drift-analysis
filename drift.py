@@ -54,10 +54,10 @@ class DriftAnalysis(Helicase):
                     concrete_spec = Spec.from_yaml(out.stdout)
 
                     # If the spec is the same move on.
-                    if abstract_spec not in self.last:
-                        self.last[abstract_spec] = concrete_spec
-                    if self.last[abstract_spec] == concrete_spec:
+                    if self.last.get(abstract_spec) == concrete_spec:
                         continue
+                    else:
+                        self.last[abstract_spec] = concrete_spec
 
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
