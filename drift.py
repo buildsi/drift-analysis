@@ -5,8 +5,10 @@ from datetime import datetime
 from subprocess import run as subprocess_run
 
 import requests
+import re
 from helicase import Helicase
 from spack.cmd.diff import compare_specs
+from spack.error import SpecError
 from spack.spec import Spec
 from spack.version import ver
 
@@ -43,10 +45,18 @@ class DriftAnalysis(Helicase):
 
             # Check that version exists in package.py file.
             out = run(f"spack versions --safe-only {abstract_spec}")
-            known_versions = set([ver(v) for v in re.split(r"\s+", out.strip())])
+            known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
 
             # Don't attempt to concretize if the version doesn't yet exist.
-            if spec.version in known_versions:
+            is_valid = False
+            spec_version = ""
+            try:
+                is_valid = spec.version in known_versions
+                spec_version = spec.version
+            except SpecError:
+                is_valid = True
+
+            if is_valid:
                 out = run(f"spack spec --yaml {abstract_spec}")
 
                 # If concretization successful check the resulting concrete specs.
@@ -79,7 +89,7 @@ class DriftAnalysis(Helicase):
                 # Construct Result
                 result = Result(
                     spec.name,
-                    spec.version,
+                    spec_version,
                     commit.hash,
                     tags,
                     str(commit.author_date))
