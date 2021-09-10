@@ -108,9 +108,9 @@ def send(result:Result):
     output["package"] = {"name": result.name, "version": result.version}
 
     # Upload json data to the drift server.
-    r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
+    # r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
     print(json.dumps(output), flush=True)
-    print(r.status_code)
+    # print(r.status_code)
 
 def run(command):
     result = subprocess_run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:], 
