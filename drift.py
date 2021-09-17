@@ -58,6 +58,7 @@ class DriftAnalysis(Helicase):
 
             if is_valid:
                 out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
+                print(out.stderr)
 
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
@@ -66,6 +67,8 @@ class DriftAnalysis(Helicase):
                     # If the spec is the same move on.
                     if self.last.get(abstract_spec) == concrete_spec:
                         continue
+                    elif self.last.get(abstract_spec) == None:
+                        self.last[abstract_spec] = concrete_spec
 
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
@@ -74,8 +77,8 @@ class DriftAnalysis(Helicase):
                         color=False)
 
                     # Flatten list to tags with context.
-                    tags = ["added:%s:%s" %(x[0],x[1]) for x in diff['b_not_a']]
-                    tags += ["removed:%s:%s" %(x[0],x[1]) for x in diff['a_not_b']]
+                    tags = ["added:%s" %x for x in diff['b_not_a']]
+                    tags += ["removed:%s" %x for x in diff['a_not_b']]
 
                     # Save concrete spec as last spec.
                     self.last[abstract_spec] = concrete_spec
