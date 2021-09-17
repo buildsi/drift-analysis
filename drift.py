@@ -44,7 +44,7 @@ class DriftAnalysis(Helicase):
             spec = Spec(abstract_spec)
 
             # Check that version exists in package.py file.
-            out = run(f"spack versions --safe-only {abstract_spec}")
+            out = run(f"spack -C {args.spack_config} versions --safe-only {abstract_spec}")
             known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
 
             # Don't attempt to concretize if the version doesn't yet exist.
@@ -57,7 +57,7 @@ class DriftAnalysis(Helicase):
                 is_valid = True
 
             if is_valid:
-                out = run(f"spack spec --yaml {abstract_spec}")
+                out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
 
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
@@ -124,6 +124,7 @@ def main():
     parser.add_argument("--username")
     parser.add_argument("--password")
     parser.add_argument("--repo")
+    parser.add_argument("--spack-config")
     parser.add_argument("--since-commit")
     parser.add_argument("--since")
     parser.add_argument("--to-commit")

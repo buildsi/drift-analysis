@@ -12,14 +12,22 @@ study:
       description: Search for Inflection Point within Spack.
       run:
           cmd: |
-            git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)
+            mkdir -p /dev/shm/spack-$(SPEC)/spack
+            mkdir -p /dev/shm/spack-$(SPEC)/cache
+            mkdir -p /dev/shm/spack-$(SPEC)/config
+
+            echo "config:" > /dev/shm/spack-$(SPEC)/config/config.yaml
+            echo "    misc_cache: /dev/shm/spack-$(SPEC)/cache" >> /dev/shm/spack-$(SPEC)/config/config.yaml
+
+            git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)/spack
             sed -i 's/~\/.spack\/cache/\/dev\/shm\/spack-$(SPEC)/g' /dev/shm/spack-$(SPEC)/etc/spack/defaults/config.yaml
             cd projects/drift-analysis/
             python3 drift.py \
                     --host="" \
                     --username="" \
                     --password="" \
-                    --repo=/dev/shm/spack-$(SPEC) \
+                    --repo=/dev/shm/spack-$(SPEC)/spack \
+                    --spack-config=/dev/shm/spack-$(SPEC)/config \
                     --from-commit="" \
                     --to-commit="" \
                     --spec="$(SPEC)"
