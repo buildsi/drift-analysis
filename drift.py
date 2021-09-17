@@ -66,8 +66,6 @@ class DriftAnalysis(Helicase):
                     # If the spec is the same move on.
                     if self.last.get(abstract_spec) == concrete_spec:
                         continue
-                    else:
-                        self.last[abstract_spec] = concrete_spec
 
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
