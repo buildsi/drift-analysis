@@ -1,7 +1,7 @@
 import json
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from subprocess import run as subprocess_run
 
 import requests
@@ -17,11 +17,11 @@ SUCCESS = 0
 
 @dataclass
 class Result:
-    name:str
-    version:str
+    abstract_spec:str
     commit:str
     tags:list
     timestamp:str
+    concretizer:str
 
 class DriftAnalysis(Helicase):
     def __init__(self, specs=None):
@@ -58,7 +58,6 @@ class DriftAnalysis(Helicase):
 
             if is_valid:
                 out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
-                print(out.stderr)
 
                 # If concretization successful check the resulting concrete specs.
                 if out.returncode == SUCCESS:
@@ -89,11 +88,11 @@ class DriftAnalysis(Helicase):
 
                 # Construct Result
                 result = Result(
-                    spec.name,
-                    spec_version,
-                    commit.hash,
-                    tags,
-                    str(commit.author_date))
+                    abstract_spec=abstract_spec,
+                    commit=commit.hash,
+                    tags=tags,
+                    timestamp=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
+                    concretizer="original")
 
                 # Send result to drift-server
                 send(result)
@@ -105,13 +104,14 @@ def send(result:Result):
     # Reformat the inputted result object into the expected json.
     output = {}
     output["commit"] = {"digest":result.commit, "timestamp":result.timestamp}
+    output["concretizer"] = result.concretizer
     output["tags"] = [{"name": x} for x in result.tags]
-    output["package"] = {"name": result.name, "version": result.version}
+    output["abstract_spec"] = result.abstract_spec
 
     # Upload json data to the drift server.
-    # r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
+    r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
     print(json.dumps(output), flush=True)
-    # print(r.status_code)
+    print(r.status_code)
 
 def run(command):
     result = subprocess_run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:], 
@@ -145,7 +145,7 @@ def main():
         data = args.since.split("/")
         since = datetime(int(data[2]), int(data[0]), int(data[1]))
     if args.to != None:
-        data = args.since.split("/")
+        data = args.to.split("/")
         to = datetime(int(data[2]), int(data[0]), int(data[1])) 
     if args.since_commit != None:
         since_commit = args.since_commit

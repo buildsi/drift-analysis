@@ -20,7 +20,6 @@ study:
             echo "    misc_cache: /dev/shm/spack-$(SPEC)/cache" >> /dev/shm/spack-$(SPEC)/config/config.yaml
 
             git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)/spack
-            sed -i 's/~\/.spack\/cache/\/dev\/shm\/spack-$(SPEC)/g' /dev/shm/spack-$(SPEC)/etc/spack/defaults/config.yaml
             cd projects/drift-analysis/
             python3 drift.py \
                     --host="" \
