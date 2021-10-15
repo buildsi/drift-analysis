@@ -20,7 +20,8 @@ class Result:
     abstract_spec:str
     commit:str
     tags:list
-    timestamp:str
+    author_date:str
+    commit_date:str
     concretizer:str
 
 class DriftAnalysis(Helicase):
@@ -91,7 +92,8 @@ class DriftAnalysis(Helicase):
                     abstract_spec=abstract_spec,
                     commit=commit.hash,
                     tags=tags,
-                    timestamp=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
+                    author_date=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
+                    commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     concretizer="original")
 
                 # Send result to drift-server
@@ -103,9 +105,9 @@ def send(result:Result):
 
     # Reformat the inputted result object into the expected json.
     output = {}
-    output["commit"] = {"digest":result.commit, "timestamp":result.timestamp}
+    output["commit"] = {"digest":result.commit, "author_date":result.author_date, "commit_date": result.commit_date}
     output["concretizer"] = result.concretizer
-    output["tags"] = [{"name": x} for x in result.tags]
+    output["tags"] = result.tags
     output["abstract_spec"] = result.abstract_spec
 
     # Upload json data to the drift server.

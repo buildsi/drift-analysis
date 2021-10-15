@@ -38,5 +38,5 @@ study:
 
 global.parameters:
     SPEC:
-        values: [abyss, zlib]
+        values: ['abyss']
         label: SPEC.%%
