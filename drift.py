@@ -111,7 +111,7 @@ def send(result:Result):
     output["abstract_spec"] = result.abstract_spec
 
     # Upload json data to the drift server.
-    r = requests.post(f"{args.host}/inflection-point/", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
+    r = requests.post(f"{args.host}/add/inflection-point", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
     print(json.dumps(output), flush=True)
     print(r.status_code)
 
