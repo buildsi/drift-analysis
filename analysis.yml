@@ -18,6 +18,7 @@ study:
 
             echo "config:" > /dev/shm/spack-$(SPEC)/config/config.yaml
             echo "    misc_cache: /dev/shm/spack-$(SPEC)/cache" >> /dev/shm/spack-$(SPEC)/config/config.yaml
+            echo "    concretizer: $(CONCRETIZER)" >> /dev/shm/spack-$(SPEC)/config/config.yaml
 
             git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)/spack
             cd projects/drift-analysis/
@@ -30,6 +31,7 @@ study:
                     --from-commit="" \
                     --to-commit="" \
                     --spec="$(SPEC)"
+                    --concretizer="$(CONCRETIZER)"
             rm -rf /dev/shm/spack-$(SPEC)
           nodes: 1
           procs: 1
@@ -38,5 +40,9 @@ study:
 
 global.parameters:
     SPEC:
-        values: ['abyss']
+        values: [abyss]
         label: SPEC.%%
+
+    CONCRETIZER:
+        values: [original, clingo]
+        label: CONCRETIZER.%%

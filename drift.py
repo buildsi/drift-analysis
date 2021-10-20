@@ -94,7 +94,7 @@ class DriftAnalysis(Helicase):
                     tags=tags,
                     author_date=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
-                    concretizer="original")
+                    concretizer=args.concretizer)
 
                 # Send result to drift-server
                 send(result)
@@ -133,6 +133,7 @@ def main():
     parser.add_argument("--to-commit")
     parser.add_argument("--to")
     parser.add_argument("--specs")
+    parser.add_argument("--concretizer")
 
     # Parse Arguments
     global args 
