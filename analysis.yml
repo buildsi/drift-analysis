@@ -21,8 +21,8 @@ study:
             echo "    concretizer: $(CONCRETIZER)" >> /dev/shm/spack-$(SPEC)/config/config.yaml
 
             git clone https://github.com/spack/spack.git /dev/shm/spack-$(SPEC)/spack
-            cd projects/drift-analysis/
-            python3 drift.py \
+            cd ~/projects/drift-analysis/
+            spack-python drift.py \
                     --host="" \
                     --username="" \
                     --password="" \

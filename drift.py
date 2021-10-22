@@ -45,8 +45,13 @@ class DriftAnalysis(Helicase):
             spec = Spec(abstract_spec)
 
             # Check that version exists in package.py file.
-            out = run(f"spack -C {args.spack_config} versions --safe-only {abstract_spec}")
-            known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
+            try:
+                out = run(f"spack -C {args.spack_config} versions --safe-only {abstract_spec}")
+                known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
+            except ValueError:
+                # If the package doesn't exist continue on to the next commit.
+                # A value error occurs because the stdout will won't contain any versions.
+                continue
 
             # Don't attempt to concretize if the version doesn't yet exist.
             is_valid = False
