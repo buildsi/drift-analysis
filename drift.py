@@ -74,6 +74,8 @@ class DriftAnalysis(Helicase):
                         continue
                     elif self.last.get(abstract_spec) == None:
                         self.last[abstract_spec] = concrete_spec
+                        if args.record_first_inflection_point.lower() != "true":
+                            continue
 
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
@@ -139,6 +141,7 @@ def main():
     parser.add_argument("--to")
     parser.add_argument("--specs")
     parser.add_argument("--concretizer")
+    parser.add_argument("--record-first-inflection-point")
 
     # Parse Arguments
     global args 
@@ -159,6 +162,8 @@ def main():
         since_commit = args.since_commit
     if args.to_commit != None:
         to_commit = args.to_commit
+    if args.record_first_inflection_point == None:
+        args.record_first_inflection_point = "true"
     
     # If specs are actually defined split them up based on commas.
     specs = None
