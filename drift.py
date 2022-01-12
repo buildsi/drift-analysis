@@ -20,9 +20,11 @@ class Result:
     abstract_spec:str
     commit:str
     tags:list
+    files:list
     author_date:str
     commit_date:str
     concretizer:str
+    concretizer_out:str
 
 class DriftAnalysis(Helicase):
     def __init__(self, specs=None):
@@ -63,6 +65,7 @@ class DriftAnalysis(Helicase):
                 is_valid = True
 
             if is_valid:
+                stdout = ""
                 out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
 
                 # If concretization successful check the resulting concrete specs.
@@ -93,15 +96,18 @@ class DriftAnalysis(Helicase):
                 else:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
+                    stdout = out.stdout
 
                 # Construct Result
                 result = Result(
                     abstract_spec=abstract_spec,
                     commit=commit.hash,
                     tags=tags,
+                    files=commit.modified_files,
                     author_date=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
-                    concretizer=args.concretizer)
+                    concretizer=args.concretizer,
+                    concretizer_out=stdout)
 
                 # Send result to drift-server
                 send(result)
@@ -114,7 +120,9 @@ def send(result:Result):
     output = {}
     output["commit"] = {"digest":result.commit, "author_date":result.author_date, "commit_date": result.commit_date}
     output["concretizer"] = result.concretizer
+    output["concretization_out"] = result.concretizer_out
     output["tags"] = result.tags
+    output["files"] = result.files
     output["abstract_spec"] = result.abstract_spec
 
     # Upload json data to the drift server.
