@@ -98,12 +98,20 @@ class DriftAnalysis(Helicase):
                     tags = ["concretization-failed"]
                     stdout = out.stdout
 
+                # Build list of modified files
+                files = []
+                for file in commit.modified_files:
+                    if file.change_type.name == "Deleted":
+                        files.append(str(file.change_type.name) + ": " + file.old_path)
+                    else:
+                        files.append(str(file.change_type.name) + ": " + file.new_path)
+
                 # Construct Result
                 result = Result(
                     abstract_spec=abstract_spec,
                     commit=commit.hash,
                     tags=tags,
-                    files=commit.modified_files,
+                    files=files,
                     author_date=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     concretizer=args.concretizer,
