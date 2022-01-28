@@ -21,6 +21,7 @@ class Result:
     commit:str
     tags:list
     files:list
+    primary:bool
     author_date:str
     commit_date:str
     concretizer:str
@@ -49,6 +50,8 @@ class DriftAnalysis(Helicase):
             # Check that version exists in package.py file.
             try:
                 out = run(f"spack -C {args.spack_config} versions --safe-only {abstract_spec}")
+                if out.returncode != SUCCESS:
+                    continue
                 known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
             except ValueError:
                 # If the package doesn't exist continue on to the next commit.
@@ -61,9 +64,15 @@ class DriftAnalysis(Helicase):
             try:
                 is_valid = spec.version in known_versions
                 spec_version = spec.version
+
+            # In the case that our abstract spec doesn't have a version spack-python
+            # will return an error. The latest version of a spec (spec with no version)
+            # will always exist and thus should be considered valid.
             except SpecError:
                 is_valid = True
 
+            # If the abstract spec and version both exist at the commit we should
+            # go ahead and try to concretize them.
             if is_valid:
                 stdout = ""
                 out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
@@ -106,12 +115,23 @@ class DriftAnalysis(Helicase):
                     else:
                         files.append(str(file.change_type.name) + ": " + file.new_path)
 
+                is_primary = False
+                for tag in tags:
+                    if spec_version == "" and tag.startswith(f'added:version("{spec.name}"'):
+                        is_primary = True
+                        break
+                    else:
+                        if tag.startswith(f'added:version("{spec.name}", "{spec_version}"'):
+                            is_primary = True
+                            break
+
                 # Construct Result
                 result = Result(
                     abstract_spec=abstract_spec,
                     commit=commit.hash,
                     tags=tags,
                     files=files,
+                    primary=is_primary,
                     author_date=f'{commit.author_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     concretizer=args.concretizer,
@@ -132,6 +152,7 @@ def send(result:Result):
     output["tags"] = result.tags
     output["files"] = result.files
     output["abstract_spec"] = result.abstract_spec
+    output["primary"] = result.primary
 
     # Upload json data to the drift server.
     r = requests.post(f"{args.host}/add/inflection-point", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
