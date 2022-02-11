@@ -109,11 +109,8 @@ class DriftAnalysis(Helicase):
 
                 # Build list of modified files
                 files = []
-                for file in commit.modified_files:
-                    if file.change_type.name == "Deleted":
-                        files.append(str(file.change_type.name) + ": " + file.old_path)
-                    else:
-                        files.append(str(file.change_type.name) + ": " + file.new_path)
+                for file in commit.modified_files():
+                    files.append(file.change_type + ": " + file.path)
 
                 is_primary = False
                 for tag in tags:
