@@ -105,7 +105,7 @@ class DriftAnalysis(Helicase):
                 else:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
-                    stdout = out.stdout
+                    stdout = out.stderr
 
                 # Build list of modified files
                 files = []
@@ -136,7 +136,7 @@ class DriftAnalysis(Helicase):
 
                 # Send result to drift-server
                 send(result)
-    
+
 def send(result:Result):
     """Send reformats the input result and attempts to upload the data as
        as a json message to the supplied drift server."""
@@ -191,14 +191,14 @@ def main():
         since = datetime(int(data[2]), int(data[0]), int(data[1]))
     if args.to != None:
         data = args.to.split("/")
-        to = datetime(int(data[2]), int(data[0]), int(data[1])) 
+        to = datetime(int(data[2]), int(data[0]), int(data[1]))
     if args.since_commit != None:
         since_commit = args.since_commit
     if args.to_commit != None:
         to_commit = args.to_commit
     if args.record_first_inflection_point == None:
         args.record_first_inflection_point = "true"
-    
+
     # If specs are actually defined split them up based on commas.
     specs = None
     if args.specs != None:
@@ -206,7 +206,7 @@ def main():
 
     # Create new Drift Analysis
     da = DriftAnalysis(specs)
-    da.traverse(args.repo, 
+    da.traverse(args.repo,
         since=since,
         to=to,
         from_commit=since_commit,
