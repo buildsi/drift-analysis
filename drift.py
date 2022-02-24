@@ -31,8 +31,9 @@ class DriftAnalysis(Helicase):
     def __init__(self, specs=None):
         """Setup the last cache and specs used for the analysis."""
 
-        self.last = {}
-        self.specs = specs or []
+        self.abstract_specs = specs or []
+        self.last_spec = {}
+        self.last_success = {abstract_spec:True for abstract_spec in self.abstract_specs}
 
     def analyze(self, commit):
         """Analyze defines the process that should be run on every commit
@@ -43,7 +44,7 @@ class DriftAnalysis(Helicase):
            update leading to a different installation for the same input
            abstract spec."""
 
-        for abstract_spec in self.specs:
+        for abstract_spec in self.abstract_specs:
             # Create spec for parsing info
             spec = Spec(abstract_spec)
 
@@ -82,16 +83,16 @@ class DriftAnalysis(Helicase):
                     concrete_spec = Spec.from_yaml(out.stdout)
 
                     # If the spec is the same move on.
-                    if self.last.get(abstract_spec) == concrete_spec:
+                    if self.last_spec.get(abstract_spec) == concrete_spec:
                         continue
-                    elif self.last.get(abstract_spec) == None:
-                        self.last[abstract_spec] = concrete_spec
+                    elif self.last_spec.get(abstract_spec) == None:
+                        self.last_spec[abstract_spec] = concrete_spec
                         if args.record_first_inflection_point.lower() != "true":
                             continue
 
                     # If the spec is different check what is different and save as tags.
                     diff = compare_specs(
-                        self.last[abstract_spec],
+                        self.last_spec[abstract_spec],
                         concrete_spec,
                         color=False)
 
@@ -100,12 +101,19 @@ class DriftAnalysis(Helicase):
                     tags += ["removed:%s" %x for x in diff['a_not_b']]
 
                     # Save concrete spec as last spec.
-                    self.last[abstract_spec] = concrete_spec
+                    self.last_spec[abstract_spec] = concrete_spec
+                    self.last_success[abstract_spec] = True
 
-                else:
+                elif self.last_success[abstract_spec] == True:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
                     stdout = out.stderr
+                    self.last_success[abstract_spec] = False
+                
+                # If spec continues to fail to concretize move on without
+                # creating another inflection-point.
+                else:
+                    continue
 
                 # Build list of modified files
                 files = []
