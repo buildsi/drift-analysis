@@ -34,19 +34,31 @@ class DriftAnalysis(Helicase):
         self.abstract_specs = specs or []
         self.last_spec = {}
         self.last_success = {abstract_spec:True for abstract_spec in self.abstract_specs}
+        self.previous_points = {abstract_spec:[] for abstract_spec in self.abstract_specs}
+
+        if args.skip_known_inflection_points == "true":
+            for abstract_spec in self.abstract_specs:
+                r = requests.get(f"{args.host}/add/inflection-points/{abstract_spec}")
+                for point in r.json():
+                    self.previous_points.get(abstract_spec).append(point.get("GitCommit"))
+
+        print(self.previous_points)
 
     def analyze(self, commit):
         """Analyze defines the process that should be run on every commit
-           and for every abstract spec. This is used to determine if the 
+           and for every abstract spec. This is used to determine if the
            commit is an "inflection point". Inflection points occur when
-           the concretization for an abstract spec changes. This most 
+           the concretization for an abstract spec changes. This most
            often happens when a package updates or one of its dependencies
            update leading to a different installation for the same input
            abstract spec."""
-
         for abstract_spec in self.abstract_specs:
             # Create spec for parsing info
             spec = Spec(abstract_spec)
+
+            if args.skip_known_inflection_points == "true" and \
+               commit.hash in self.previous_points{abstract_spec}:
+                continue
 
             # Check that version exists in package.py file.
             try:
@@ -109,7 +121,7 @@ class DriftAnalysis(Helicase):
                     tags = ["concretization-failed"]
                     stdout = out.stderr
                     self.last_success[abstract_spec] = False
-                
+
                 # If spec continues to fail to concretize move on without
                 # creating another inflection-point.
                 else:
@@ -160,12 +172,12 @@ def send(result:Result):
     output["primary"] = result.primary
 
     # Upload json data to the drift server.
-    r = requests.post(f"{args.host}/add/inflection-point", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password)) 
+    r = requests.post(f"{args.host}/add/inflection-point", json=output, auth=requests.auth.HTTPBasicAuth(args.username, args.password))
     print(json.dumps(output), flush=True)
     print(r.status_code)
 
 def run(command):
-    result = subprocess_run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:], 
+    result = subprocess_run([args.repo + "/bin/"+command.split()[0]] + command.split()[1:],
         capture_output=True, text=True)
     return result
 
@@ -184,9 +196,10 @@ def main():
     parser.add_argument("--specs")
     parser.add_argument("--concretizer")
     parser.add_argument("--record-first-inflection-point")
+    parser.add_argument("--skip-known-inflection-points")
 
     # Parse Arguments
-    global args 
+    global args
     args = parser.parse_args()
 
     # Define program parameter defaults
@@ -206,6 +219,8 @@ def main():
         to_commit = args.to_commit
     if args.record_first_inflection_point == None:
         args.record_first_inflection_point = "true"
+    if args.skip_known_inflection_points == None:
+        args.skip_known_inflection_points = "true"
 
     # If specs are actually defined split them up based on commas.
     specs = None
