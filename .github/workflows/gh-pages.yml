@@ -17,7 +17,7 @@ jobs:
 
       - name: deploy
         run: |
-          if [[ $(git restore --source origin/${GITHUB_REF##*/} vis) == 0 ]]
+          if [[ $(git restore --source origin/${GITHUB_REF##*/} vis) == 0 ]]; then
             cp -r vis/* .
             rm -r vis/
 
