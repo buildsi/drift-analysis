@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Number of Inflection Points Per Day</title>
+    <meta charset="utf-8" />
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+
+    <style media="screen">
+      /* Add space between Vega-Embed links  */
+      .vega-actions a {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Number of Inflection Points Per Day</h1>
+    <!-- Container for the visualization -->
+    <div id="vis"></div>
+
+    <script>
+      // Assign the specification to a local variable vlSpec.
+      var vlSpec = {
+        width: 1200,
+        height: 500,
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        data: {"url": "https://drift-server.spack.io/inflection-points", "format": {"type": "json"}},
+        mark: {"type": "bar", "tooltip": true}, 
+        encoding: {
+          x: {"timeUnit": "yearmonthdate", "field": "GitCommitDate", "type": "temporal"},
+          y: {"aggregate": "count", "field": "AbstractSpec"},
+          color: {
+          field: "Concretized",
+          type: "nominal",
+          scale: {
+            domain: ["true", "false"],
+            range: ["#1f77b4", "#c7c7c7"]
+            }
+          }
+        },
+      };
+
+      // Embed the visualization in the container with id `vis`
+      vegaEmbed('#vis', vlSpec);
+    </script>
+  </body>
+</html>

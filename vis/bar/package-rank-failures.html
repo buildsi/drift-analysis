@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Packages with the most Concretization Failures</title>
+    <meta charset="utf-8" />
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+
+    <style media="screen">
+      /* Add space between Vega-Embed links  */
+      .vega-actions a {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Packages with the most Concretization Failures</h1>
+    <!-- Container for the visualization -->
+    <div id="vis"></div>
+
+    <script>
+      // Assign the specification to a local variable vlSpec.
+      var vlSpec = {
+        width: 1200,
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        data: {"url": "https://drift-server.spack.io/inflection-points", "format": {"type": "json"}},
+        mark: {"type": "bar", "tooltip": true},
+        encoding: {
+          x: {"aggregate": "sum", "field": "FilterNum"},
+          y: {"field": "AbstractSpec", "sort": "-x"},
+          color: {
+          field: "Concretizer",
+          type: "nominal",
+          scale: {
+            domain: ["original", "clingo"],
+            range: ["#1f77b4", "#e7ba52"]
+            }
+          },
+        },
+        transform: [
+          {"filter": "datum.Tags == 'concretization-failed'"},
+          {"calculate": "datum.Concretizer == 'clingo' ? 1 : 1", "as": "FilterNum"}
+        ]
+      };
+
+      // Embed the visualization in the container with id `vis`
+      vegaEmbed('#vis', vlSpec);
+    </script>
+  </body>
+</html>
