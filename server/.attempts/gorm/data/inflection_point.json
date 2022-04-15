@@ -1,5 +1,0 @@
-{
-    "commit": {"digest": "12345", "timestamp": "2021-12-10"},
-    "tags": [{"name": "one"}, {"name": "two"}, {"name": "three"}],
-    "package": {"name": "packageName", "version": "packageVersion"}
-}

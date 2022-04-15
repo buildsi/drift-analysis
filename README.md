@@ -1,2 +1,2 @@
-# drift-analysis
-Measuring Package Drift Within the Spack Repository
+# vis
+A collection of Package Drift Visualizations for the Spack Repository

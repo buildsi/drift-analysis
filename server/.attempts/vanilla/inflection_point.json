@@ -1,5 +1,0 @@
-{
-    "commit": {"name": "12345", "timestamp": "2021-12-10"},
-    "tags": ["one", "two", "three"],
-    "package": {"name": "packageName", "version": "packageVersion"}
-}
