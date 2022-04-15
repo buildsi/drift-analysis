@@ -17,7 +17,7 @@ jobs:
 
       - name: deploy
         run: |
-          git restore --source origin/${GITHUB_REF##*/} vis
+          git restore --source origin/main vis
           cp -r vis/* .
           rm -r vis/
 
