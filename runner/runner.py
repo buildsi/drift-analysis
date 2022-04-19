@@ -1,12 +1,12 @@
 """Drift Analysis HPC Runner."""
 
 import json
-from operator import contains
 import re
+import subprocess
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import subprocess
+from operator import contains
 
 import dateutil.parser
 import requests
@@ -150,7 +150,7 @@ class DriftAnalysis(Helicase):
                 elif self.last_success[abstract_spec] is True:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
-                    stdout = out.stderr
+                    stdout = out.stdout
                     self.last_success[abstract_spec] = False
 
                 # If spec continues to fail to concretize move on without
@@ -224,7 +224,7 @@ def send(result: Result):
 def send_artifact(artifact: str, datatype="text/plain"):
     r = requests.put(
         f"{args.host}/artifact",
-        headers={'Content-Type':datatype},
+        headers={'Content-Type': datatype},
         body=artifact,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
     )
