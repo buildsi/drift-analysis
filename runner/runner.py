@@ -58,7 +58,7 @@ class DriftAnalysis(Helicase):
 
         if args.skip_known_inflection_points == "true":
             for abstract_spec in self.abstract_specs:
-                r = requests.get(f"{args.host}/inflection-points/{abstract_spec}")
+                r = requests.get(f"{args.host}/inflection-points/{abstract_spec}", verify=False)
                 for point in r.json():
                     point_date = dateutil.parser.parse(point["GitCommitDate"])
                     if point["Concretizer"] == args.concretizer and \
@@ -83,6 +83,7 @@ class DriftAnalysis(Helicase):
             spec = Spec(abstract_spec)
 
             if args.skip_known_inflection_points == "true" and \
+               self.previous_points[abstract_spec] is not None and \
                commit.committer_date < self.previous_points[abstract_spec]:
                 continue
 
@@ -207,35 +208,39 @@ def send(result: Result):
     output["Concretized"] = result.concretized
     output["Primary"] = result.primary
 
-    if result.concretizer_out is not "":
+    if result.concretizer_out != "":
         output["ConcretizationErrUUID"] = send_artifact(result.concretizer_out)
 
-    output["SpecUUID"] = send_artifact(result.concrete_spec, datatype="application/json")
+    output["SpecUUID"] = send_artifact(result.concrete_spec.to_json(), datatype="application/json")
 
     # Upload json data to the drift server.
     r = requests.put(
         f"{args.host}/inflection-point",
         json=output,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+        verify=False,
     )
     print(json.dumps(output), flush=True)
     print(r.status_code)
 
+
 def send_artifact(artifact: str, datatype="text/plain"):
+    """Upload an artifact to a drift-server instance and return its UUID."""
     r = requests.put(
         f"{args.host}/artifact",
         headers={'Content-Type': datatype},
-        body=artifact,
+        data=artifact,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+        verify=False,
     )
 
-    if r.status_code is not 200:
+    if r.status_code != 200:
         print("Error uploading artifact")
         print(f"{args.host}/artifact: {r.status_code}")
         exit()
 
-    resp = r.getresponse().json()
-    return resp["uuid"]
+    return r.json()["uuid"]
+
 
 def run(command):
     """Run executes a spack command using the known spack bin."""
