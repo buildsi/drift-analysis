@@ -1,38 +1,63 @@
+"""This program implements a minimal drift-analysis builder."""
+
 import json
-import requests
 import subprocess
 from argparse import ArgumentParser
-from spack.spec import Spec
-from git import Repo
+
+import requests
+from helicase import Repo
 
 # Define SUCCESS for comparing command return codes.
 SUCCESS = 0
 
-def get_inflection_points(host:str, abstract_spec:str):
+
+def get_inflection_points(host: str, abstract_spec: str):
+    """Return a list of inflection points represented as dictionaries."""
     r = requests.get(f"{host}/inflection-points/{abstract_spec}")
     return r.json()
 
-def build(abstract_spec:str):
-    result = subprocess.run(["spack","build", abstract_spec], 
-        capture_output=True, text=True)
-    return result.returncode
 
-def concretize_spec(abstract_spec:str):
-    result = subprocess.run(["spack","spec", "--json", abstract_spec],
-        capture_output=True, text=True)
+def run(command):
+    """Run executes a spack command using the known spack bin."""
+    result = subprocess.run(
+        [args.repo + "/bin/"+command.split()[0]] + command.split()[1:],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
     return result
 
-def upload_build(point_id:int, spec_id:int, status:str):
-    build = {"point_id":point_id, "spec_id":spec_id, "status":status}
-    r = requests.post("http://localhost:8080/build/", json=build)
-    return r.json()
 
-def upload_spec(name:str, version:str, concrete_spec:str):
-    spec = {"package": {"name":name, "version":version}, "data": json.dumps(concrete_spec)}
-    r = requests.post("http://localhost:8080/spec/", json=spec)
-    return r.json()["ID"]
+def send(point: dict):
+    """Upload an updated inflection point to the server."""
+    # Upload json data to the drift server.
+    r = requests.put(
+        f"{args.host}/inflection-point",
+        json=point,
+        auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+    )
+    print(json.dumps(point), flush=True)
+    print(r.status_code)
+
+
+def send_artifact(artifact: str, datatype="text/plain"):
+    """Upload an artifact to a drift-server and return its UUID."""
+    r = requests.put(
+        f"{args.host}/artifact",
+        headers={'Content-Type': datatype},
+        body=artifact,
+        auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+    )
+
+    if r.status_code != 200:
+        print("Error uploading artifact")
+        print(f"{args.host}/artifact: {r.status_code}")
+        exit()
+
+    resp = r.getresponse().json()
+    return resp["uuid"]
+
 
 def main():
+    """Pull inflection points and attempt to build them."""
     # Setup Argument Parsing
     parser = ArgumentParser()
     parser.add_argument("--host")
@@ -40,44 +65,41 @@ def main():
     parser.add_argument("--password")
     parser.add_argument("--repo")
     parser.add_argument("--spack-config")
-    parser.add_argument("--spec")
+    parser.add_argument("--specs")
     parser.add_argument("--concretizer")
 
     # Parse Arguments
-    global args 
+    global args
     args = parser.parse_args()
 
     # Define git repository
     repo = Repo(args.repo)
 
-    # Get abstract spec from inputs
-    abstract_spec = args.spec
+    # Repeat the build process for all assigned specs.
+    for abstract_spec in args.specs:
 
-    # Create spec based on parsed info
-    spec = Spec(abstract_spec)
+        # Get a list of known inflection points from a drift server instance.
+        inflection_points = get_inflection_points(args.host, abstract_spec)
+        for point in inflection_points:
+            if point["Concretizer"] == args.concretizer \
+              and point["Concretized"] and point["BuildLogUUID"] == "":
+                print(f"[BUILDING] {abstract_spec} at {point['GitCommit']}")
 
-    # Grab a list of inflection points from the drift server.
-    inflection_points = get_inflection_points(args.host, abstract_spec)
-    for point in inflection_points:
-        if point["Concretizer"] == args.concretizer \
-            and point["Concretized"] and point["Spec"] == "":
+                # Checkout inflection point git commit in repository.
+                repo.git("checkout", point['GitCommit'])
 
-            print(f"Building {abstract_spec} at {point["GitCommit"]})
-        # # Checkout Commit in Git
-        # # repo.git.checkout(commit["Commit"]["Digest"])
-        # # Concretize the Spec
-        # out = concretize_spec(abstract_spec)
-        # if out.returncode == SUCCESS:
-        #     concrete_spec = json.loads(out.stdout)["spec"]
-        #     spec_id = upload_spec(name, version, concrete_spec)
-        #     # Attempt Package Build
-        #     built = build(abstract_spec)
-        #     if built == SUCCESS:
-        #         upload_build(commit["ID"], spec_id, "success")
-        #     else:
-        #         upload_build(commit["ID"], spec_id, "failed")
-        # else:
-        #     upload_build(commit["ID"], -1, "failed")
+                # Attempt to build the abstract_spec at the inflection_point
+                out = run(f"spack -C {args.spack_config} install --fail-fast {abstract_spec}")
+
+                # Upload build log to a drift-server instance.
+                point["BuildLogUUID"] = send_artifact(out.stdout)
+
+                # Update "Build" status for point
+                point["Built"] = out.returncode == SUCCESS
+
+                # Upload updated point to a drift-server instance.
+                send(point)
+
 
 if __name__ == "__main__":
     main()

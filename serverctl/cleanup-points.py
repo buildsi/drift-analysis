@@ -22,13 +22,8 @@ def main():
     for point in r.json():
         # point_date = dateutil.parser.parse(point["GitCommitDate"])
         if point["Tags"] == []:
-            output = {}
-            output["commit"] = {"digest": point["GitCommit"]}
-            output["concretizer"] = point["Concretizer"]
-            output["abstract_spec"] = point["AbstractSpec"]
-
-            pr = requests.post(f"{args.host}/delete/inflection-point",
-                               json=output,
+            pr = requests.delete(f"{args.host}/inflection-point",
+                               json=point,
                                auth=requests.auth.HTTPBasicAuth(
                                    args.username,
                                    args.password))

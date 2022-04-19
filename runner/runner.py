@@ -1,12 +1,12 @@
 """Drift Analysis HPC Runner."""
 
 import json
-from operator import contains
 import re
+import subprocess
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from datetime import datetime, timezone
-import subprocess
+from operator import contains
 
 import dateutil.parser
 import requests
@@ -154,7 +154,7 @@ class DriftAnalysis(Helicase):
                 elif self.last_success[abstract_spec] is True:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
-                    stdout = out.stderr
+                    stdout = out.stdout
                     self.last_success[abstract_spec] = False
 
                 # If spec continues to fail to concretize move on without
@@ -211,7 +211,7 @@ def send(result: Result):
     output["Concretized"] = result.concretized
     output["Primary"] = result.primary
 
-    if result.concretizer_out is not "":
+    if result.concretizer_out != "":
         output["ConcretizationErrUUID"] = send_artifact(result.concretizer_out)
 
     output["SpecUUID"] = send_artifact(result.concrete_spec.to_json(), datatype="application/json")
@@ -226,21 +226,24 @@ def send(result: Result):
     print(json.dumps(output), flush=True)
     print(r.status_code)
 
+
 def send_artifact(artifact: str, datatype="text/plain"):
+    """Upload an artifact to a drift-server instance and return its UUID."""
     r = requests.put(
         f"{args.host}/artifact",
-        headers={'Content-Type':datatype},
+        headers={'Content-Type': datatype},
         data=artifact,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
         verify=False,
     )
 
-    if r.status_code is not 200:
+    if r.status_code != 200:
         print("Error uploading artifact")
         print(f"{args.host}/artifact: {r.status_code}")
         exit()
 
     return r.json()["uuid"]
+
 
 def run(command):
     """Run executes a spack command using the known spack bin."""
