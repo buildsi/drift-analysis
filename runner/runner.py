@@ -83,14 +83,16 @@ class DriftAnalysis(Helicase):
             spec = Spec(abstract_spec)
 
             if args.skip_known_inflection_points == "true" and \
-               self.previous_points[abstract_spec] is not None and \
+               self.previous_points[abstract_spec] != None and \
                commit.committer_date < self.previous_points[abstract_spec]:
+                print("continue through 1")
                 continue
 
             # Check that version exists in package.py file.
             try:
-                out = run(f"spack -C {args.spack_config} versions --safe-only {abstract_spec}")
+                out = run(f"spack -C {args.spack_config} versions --safe {abstract_spec}")
                 if out.returncode != SUCCESS:
+                    print("continue through 2")
                     continue
                 known_versions = set([ver(v) for v in re.split(r"\s+", out.stdout.strip())])
 
@@ -98,6 +100,7 @@ class DriftAnalysis(Helicase):
                 # If the package doesn't exist continue on to the next commit.
                 # A value error occurs because the stdout will won't
                 # contain any versions.
+                print("continue through 3")
                 continue
 
             # Don't attempt to concretize if the version doesn't yet exist.
