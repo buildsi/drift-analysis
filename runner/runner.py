@@ -120,7 +120,8 @@ class DriftAnalysis(Helicase):
             # If the abstract spec and version both exist at the commit we
             # should go ahead and try to concretize them.
             if is_valid:
-                stdout = ""
+                concrete_spec = None
+                stderr = ""
                 out = run(f"spack -C {args.spack_config} spec --yaml {abstract_spec}")
 
                 # If concretization successful check the resulting
@@ -154,7 +155,7 @@ class DriftAnalysis(Helicase):
                 elif self.last_success[abstract_spec] is True:
                     # Mark failing concretization points.
                     tags = ["concretization-failed"]
-                    stdout = out.stdout
+                    stderr = out.stderr
                     self.last_success[abstract_spec] = False
 
                 # If spec continues to fail to concretize move on without
@@ -189,7 +190,7 @@ class DriftAnalysis(Helicase):
                     commit_date=f'{commit.committer_date.astimezone(tz=timezone.utc):%Y-%m-%dT%H:%M:%S+00:00}',
                     concretized=not contains(tags, "concretization-failed"),
                     concretizer=args.concretizer,
-                    concretizer_out=stdout,
+                    concretizer_out=stderr,
                     concrete_spec=concrete_spec)
 
                 # Send result to drift-server
@@ -214,7 +215,8 @@ def send(result: Result):
     if result.concretizer_out != "":
         output["ConcretizationErrUUID"] = send_artifact(result.concretizer_out)
 
-    output["SpecUUID"] = send_artifact(result.concrete_spec.to_json(), datatype="application/json")
+    if result.concrete_spec != None:
+        output["SpecUUID"] = send_artifact(result.concrete_spec.to_json(), datatype="application/json")
 
     # Upload json data to the drift server.
     r = requests.put(
@@ -249,7 +251,7 @@ def run(command):
     """Run executes a spack command using the known spack bin."""
     result = subprocess.run(
         [args.repo + "/bin/"+command.split()[0]] + command.split()[1:],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        capture_output=True, text=True
     )
     return result
 
