@@ -13,7 +13,7 @@ SUCCESS = 0
 
 def get_inflection_points(host: str, abstract_spec: str):
     """Return a list of inflection points represented as dictionaries."""
-    r = requests.get(f"{host}/inflection-points/{abstract_spec}")
+    r = requests.get(f"{host}/inflection-points/{abstract_spec}", verify=False)
     return r.json()
 
 
@@ -33,6 +33,7 @@ def send(point: dict):
         f"{args.host}/inflection-point",
         json=point,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+        verify=False,
     )
     print(json.dumps(point), flush=True)
     print(r.status_code)
@@ -43,8 +44,9 @@ def send_artifact(artifact: str, datatype="text/plain"):
     r = requests.put(
         f"{args.host}/artifact",
         headers={'Content-Type': datatype},
-        body=artifact,
+        data=artifact,
         auth=requests.auth.HTTPBasicAuth(args.username, args.password),
+        verify=False,
     )
 
     if r.status_code != 200:
@@ -52,8 +54,7 @@ def send_artifact(artifact: str, datatype="text/plain"):
         print(f"{args.host}/artifact: {r.status_code}")
         exit()
 
-    resp = r.getresponse().json()
-    return resp["uuid"]
+    return r.json()["uuid"]
 
 
 def main():
@@ -76,7 +77,7 @@ def main():
     repo = Repo(args.repo)
 
     # Repeat the build process for all assigned specs.
-    for abstract_spec in args.specs:
+    for abstract_spec in args.specs.split(","):
 
         # Get a list of known inflection points from a drift server instance.
         inflection_points = get_inflection_points(args.host, abstract_spec)
