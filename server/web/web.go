@@ -42,18 +42,17 @@ func Start(addr string, auth map[string]string, db *database.DB, ds datastore.DS
 	// Setup API endpoints
 	// No Auth GET Opperations
 	r.Get("/artifact/*", h.getArtifact)
-	// r.Get("/inflection-point*", h.getInflectionPoint)
+	// r.Get("/inflection-point/*", h.getInflectionPoint)
 	r.Get("/inflection-points*", h.getInflectionPoints)
+	// r.Get("/specs", h.getSpecs)
 
 	// Auth POST Operations
 	// Add Operations
 	a.Put("/inflection-point", h.addInflectionPoint)
-	// a.Put("/build*", h.addBuildStatus)
 	a.Put("/artifact*", h.addArtifact)
 
 	// Delete Operations
 	a.Delete("/inflection-point", h.removeInflectionPoint)
-	// a.Delete("/build*", h.removeBuildStatus)
 	a.Delete("/artifact*", h.removeArtifact)
 
 	// Mount admin router
