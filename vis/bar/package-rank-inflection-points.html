@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Packages with the most Inflection Points</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">body{margin:40px auto;max-width:650px;line-height:1.6;font-size:18px;color:#444;padding:0 10px}h1,h2,h3{line-height:1.2}</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+
+    <style media="screen">
+      /* Add space between Vega-Embed links  */
+      .vega-actions a {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Packages with the most Inflection Points</h1>
+    <!-- Container for the visualization -->
+    <div id="vis" style="width: 100%;"></div>
+
+    <script>
+      // Assign the specification to a local variable vlSpec.
+      var vlSpec = {
+        "width": "container",
+        "$schema": 'https://vega.github.io/schema/vega-lite/v5.json',
+        "data": {
+          "url": "https://drift-server.spack.io/inflection-points",
+          "format": {"type": "json"}
+        },
+        "mark": {"type": "bar", "tooltip": true},
+        "encoding": {
+          "x": {"aggregate": "count", "field": "AbstractSpec"},
+          "y": {"field": "AbstractSpec", "sort": "-x"},
+          "yOffset": {"field": "Concretizer"},
+          "color": {
+            "field": "Concretizer",
+            "type": "nominal",
+            "scale": {
+            "domain": ["original", "clingo"],
+            "range": ["#1f77b4", "#e7ba52"]
+            }
+          },
+        },
+        "transform": [
+          {"filter": "datum.Tags != 'concretization-failed'"},
+        ]
+      };
+
+      // Embed the visualization in the container with id `vis`
+      vegaEmbed('#vis', vlSpec);
+    </script>
+  </body>
+</html>

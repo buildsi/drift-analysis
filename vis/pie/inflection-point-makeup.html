@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Inflection Points Make Up</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css">body{margin:40px auto;max-width:650px;line-height:1.6;font-size:18px;color:#444;padding:0 10px}h1,h2,h3{line-height:1.2}</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6.18.2"></script>
+
+    <style media="screen">
+      /* Add space between Vega-Embed links  */
+      .vega-actions a {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Inflection Points Make Up (Original Concretizer)</h1>
+    <!-- Container for the visualization -->
+    <div id="vis1"></div>
+
+    <script>
+      // Assign the specification to a local variable vlSpec.
+      var vlSpec = {
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        width: 500,
+        data: {"url": "https://drift-server.spack.io/inflection-points", "format": {"type": "json"}},
+        mark: {"type": "arc", "tooltip": true, "innerRadius": 50},
+        encoding: {
+          theta: {"aggregate": "count", "field": "Concretized"},
+          color: {
+            "field": "Concretized",
+            "type": "nominal",
+            scale: {
+              domain: ["true", "false"],
+              range: ["#1f77b4", "#c7c7c7"]
+            }
+          }
+        },
+        transform: [
+          {"filter": "datum.Concretizer == 'original'"}
+        ],
+      };
+
+      // Embed the visualization in the container with id `vis`
+      vegaEmbed('#vis1', vlSpec);
+    </script>
+    <h1>Inflection Points Make Up (Clingo Concretizer)</h1>
+    <!-- Container for the visualization -->
+    <div id="vis2"></div>
+
+    <script>
+      // Assign the specification to a local variable vlSpec.
+      var vlSpec = {
+        width: 500,
+        $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+        data: {"url": "https://drift-server.spack.io/inflection-points", "format": {"type": "json"}},
+        mark: {"type": "arc", "tooltip": true, "innerRadius": 50},
+        encoding: {
+          theta: {"aggregate": "count", "field": "Concretized"},
+          color: {
+            "field": "Concretized",
+            "type": "nominal",
+            scale: {
+              domain: ["true", "false"],
+              range: ["#e7ba52", "#c7c7c7"]
+            }
+          }
+        },
+        transform: [
+          {"filter": "datum.Concretizer == 'clingo'"}
+        ],
+      };
+
+      // Embed the visualization in the container with id `vis`
+      vegaEmbed('#vis2', vlSpec);
+    </script>
+  </body>
+</html>
