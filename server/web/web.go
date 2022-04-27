@@ -44,7 +44,7 @@ func Start(addr string, auth map[string]string, db *database.DB, ds datastore.DS
 	r.Get("/artifact/*", h.getArtifact)
 	// r.Get("/inflection-point/*", h.getInflectionPoint)
 	r.Get("/inflection-points*", h.getInflectionPoints)
-	// r.Get("/specs", h.getSpecs)
+	r.Get("/specs*", h.getSpecs)
 
 	// Auth POST Operations
 	// Add Operations

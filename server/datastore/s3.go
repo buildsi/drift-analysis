@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -11,10 +12,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/karlseguin/ccache/v2"
 )
 
 type S3 struct {
 	bucket string
+	cache  *ccache.Cache
 	ctx    context.Context
 	conn   *s3.S3
 }
@@ -39,8 +42,11 @@ func (opts S3ConfigOptions) init() (result DS, err error) {
 
 	ctx := context.Background()
 
+	cache := ccache.New(ccache.Configure().MaxSize(1000))
+
 	result = &S3{
 		bucket: opts.Bucket,
+		cache:  cache,
 		conn:   conn,
 		ctx:    ctx,
 	}
@@ -61,21 +67,24 @@ func (s *S3) Put(key string, value string) error {
 }
 
 func (s *S3) Get(key string) (string, error) {
-	ctx, cancelFn := context.WithTimeout(s.ctx, time.Second*5)
-	defer cancelFn()
+	item, err := s.cache.Fetch(key, time.Hour*24*365, func() (interface{}, error) {
+		ctx, cancelFn := context.WithTimeout(s.ctx, time.Second*5)
+		defer cancelFn()
 
-	obj, err := s.conn.GetObjectWithContext(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.bucket),
-		Key:    aws.String(filepath.Join("artifacts", key)),
+		obj, err := s.conn.GetObjectWithContext(ctx, &s3.GetObjectInput{
+			Bucket: aws.String(s.bucket),
+			Key:    aws.String(filepath.Join("artifacts", key)),
+		})
+		if err != nil {
+			return "", err
+		}
+
+		buf := new(strings.Builder)
+		_, err = io.Copy(buf, obj.Body)
+		return buf, err
 	})
-	if err != nil {
-		return "", err
-	}
 
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, obj.Body)
-
-	return buf.String(), err
+	return fmt.Sprintf("%v", item.Value()), err
 }
 
 func (s *S3) Delete(key string) error {
@@ -86,5 +95,7 @@ func (s *S3) Delete(key string) error {
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(filepath.Join("artifacts", key)),
 	})
+
+	s.cache.Delete(key)
 	return err
 }
