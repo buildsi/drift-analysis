@@ -11,11 +11,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-        with:
-          ref: 'gh-pages'
 
       - name: deploy
         run: |
+          git checkout gh-pages
+
           if [[ $(git restore --source main vis) == 0 ]]; then
             cp -r vis/* .
             rm -r vis/
