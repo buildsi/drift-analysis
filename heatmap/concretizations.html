@@ -48,19 +48,69 @@
                "aggregate": "count",
                "field": "AbstractSpec",
                "axis": {"title": "Num Points"}
-             },
+             }
            },
            "transform": [{"filter": "datum.Concretizer == 'original'"}]
-         }, {
+         },
+         {
            "width": "container",
-           "mark": {"type": "rect", "tooltip": {"content": "data"}},
-           "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
-           "encoding": {
-             "x": {
-               "timeUnit": "yearmonthdate",
-               "field": "GitCommitDate",
-               "type": "temporal"
+           "layer": [
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 }
+               }
              },
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"filter": "datum.Concretized == false"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "failure_end",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             },
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"calculate": "now()", "as": "today"},
+                 {"filter": "datum.Concretized == false && !isValid(datum.failure_end)"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "today",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             }
+           ],
+           "encoding": {
              "y": {"field": "AbstractSpec"},
              "color": {
                "field": "Concretized",
@@ -116,19 +166,69 @@
                "aggregate": "count",
                "field": "AbstractSpec",
                "axis": {"title": "Num Points"}
-             },
+             }
            },
-           "transform": [{"filter": "datum.Concretizer == 'clingo'"}]
-         }, {
+           "transform": [{"filter": "datum.Concretizer == 'original'"}]
+         },
+         {
            "width": "container",
-           "mark": {"type": "rect", "tooltip": {"content": "data"}},
-           "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
-           "encoding": {
-             "x": {
-               "timeUnit": "yearmonthdate",
-               "field": "GitCommitDate",
-               "type": "temporal"
+           "layer": [
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 }
+               }
              },
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"filter": "datum.Concretized == false"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "failure_end",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             },
+             {
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"calculate": "now()", "as": "today"},
+                 {"filter": "datum.Concretized == false && !isValid(datum.failure_end)"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "today",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             }
+           ],
+           "encoding": {
              "y": {"field": "AbstractSpec"},
              "color": {
                "field": "Concretized",
