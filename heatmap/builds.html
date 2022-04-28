@@ -117,17 +117,12 @@
            "encoding": {
              "y": {"field": "AbstractSpec"},
              "color": {
-               "field": "Concretized",
+               "field": "Built",
                "type": "nominal",
                "scale": {
-                 "domain": ["true", "false", "primary"],
-                 "range": ["#93c47d", "#e06666", "#C490D1"]
+                 "domain": ["true", "false"],
+                 "range": ["#93c47d", "#e06666"]
                },
-               "condition": [
-                 {"test": "datum['Primary'] == true", "value": "#C490D1"},
-                 {"test": "datum['Built'] == true", "value": "#93c47d"},
-                 {"test": "datum['Built'] == false", "value": "#e06666"}
-               ]
              }
            },
            "transform": [
@@ -151,40 +146,110 @@
   <script>
     // Assign the specification to a local variable vlSpec.
     var vlSpec = {
-  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "data": {
-    "url": "https://drift-server.spack.io/inflection-points",
-    "format": {"type": "json"}
-  },
-  "vconcat": [
-       {
-         "width": "container",
-         "mark": {"type": "rect", "tooltip": {"content": "data"}},
-         "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
-         "encoding": {
-           "x": {
-             "timeUnit": "yearmonthdate",
-             "field": "GitCommitDate",
-             "type": "temporal"
-           },
-           "y": {"field": "AbstractSpec"},
-           "color": {
-             "field": "Concretized",
-             "type": "nominal",
-             "scale": {
-               "domain": ["true", "false", "primary"],
-               "range": ["#93c47d", "#e06666", "#C490D1"]
+       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+       "data": {
+         "url": "https://drift-server.spack.io/inflection-points",
+         "format": {"type": "json"}
+       },
+       "vconcat": [
+         {
+           "width": "container",
+           "height": 60,
+           "mark": {"type": "bar"},
+           "encoding": {
+             "x": {
+               "timeUnit": "yearmonthdate",
+               "field": "GitCommitDate",
+               "type": "temporal",
+               "scale": {"domain": {"param": "scroll_1"}},
+               "axis": {"title": ""}
              },
-             "condition": [
-               {"test": "datum['Built'] == true", "value": "#93c47d"},
-               {"test": "datum['Built'] == false", "value": "#e06666"}
-             ]
-           }
+             "y": {
+               "aggregate": "count",
+               "field": "AbstractSpec",
+               "axis": {"title": "Num Points"}
+             }
+           },
+           "transform": [{"filter": "datum.Concretizer == 'clingo'"}]
          },
-         "transform": [{"filter": "datum.Concretizer == 'clingo' && datum.BuildLogUUID != ''"}]
-       }
-   ],
-      "resolve": {"scale": {"x": "independent", "y": "independent"}}
+         {
+           "width": "container",
+           "layer": [
+             {
+               "href": {"field": "Url", "type": "nominal"},
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
+               "encoding": {
+                 "href": {"field": "Url", "type": "nominal"},
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 }
+               }
+             },
+             {
+               "mark": {"type": "rule", "tooltip": {"content": "data"}, "size": "2"},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"filter": "datum.Built == false"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "failure_end",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             },
+             {
+               "mark": {"type": "rule", "tooltip": {"content": "data"}, "size": "2"},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"calculate": "now()", "as": "today"},
+                 {"filter": "datum.Built == false && !isValid(datum.failure_end)"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "today",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             }
+           ],
+           "encoding": {
+             "y": {"field": "AbstractSpec"},
+             "color": {
+               "field": "Built",
+               "type": "nominal",
+               "scale": {
+                 "domain": ["true", "false"],
+                 "range": ["#93c47d", "#e06666"]
+               },
+             }
+           },
+           "transform": [
+             {"filter": "datum.Concretizer == 'clingo' && datum.BuildLogUUID != ''"},
+             {"calculate": "'https://drift-server.spack.io/artifact/' + datum.BuildLogUUID", "as": "Url"}
+           ]
+         }
+       ],
+       "resolve": {"scale": {"x": "independent", "y": "independent"}}
     }
 
    // Embed the visualization in the container with id `vis`
