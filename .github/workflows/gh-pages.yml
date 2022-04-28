@@ -16,7 +16,7 @@ jobs:
 
       - name: deploy
         run: |
-          if [[ $(git restore --source origin/main vis) == 0 ]]; then
+          if [[ $(git restore --source main vis) == 0 ]]; then
             cp -r vis/* .
             rm -r vis/
 
