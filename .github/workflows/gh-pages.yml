@@ -29,6 +29,6 @@ jobs:
 
           git add .
 
-          if [[ $(git commit -m "gh-pages deploy ${date}") == 0 ]]; then
+          if git commit -m "gh-pages deploy ${date}"; then
             git push
           fi
