@@ -50,31 +50,81 @@
                "aggregate": "count",
                "field": "AbstractSpec",
                "axis": {"title": "Num Points"}
-             },
-           }
-         }, {
+             }
+           },
+           "transform": [{"filter": "datum.Concretizer == 'original'"}]
+         },
+         {
            "width": "container",
-           "mark": {"type": "rect", "tooltip": {"content": "data"}},
-           "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
+           "layer": [
+             {
+               "href": {"field": "Url", "type": "nominal"},
+               "mark": {"type": "rect", "tooltip": {"content": "data"}},
+               "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
+               "encoding": {
+                 "href": {"field": "Url", "type": "nominal"},
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 }
+               }
+             },
+             {
+               "mark": {"type": "rule", "tooltip": {"content": "data"}, "size": "2"},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"filter": "datum.Built == false"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "failure_end",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             },
+             {
+               "mark": {"type": "rule", "tooltip": {"content": "data"}, "size": "2"},
+               "transform": [
+                 {
+                   "window": [{"op": "lead", "field": "GitCommitDate", "as": "failure_end"}],
+                   "groupby": ["AbstractSpec"]},
+                 {"calculate": "now()", "as": "today"},
+                 {"filter": "datum.Built == false && !isValid(datum.failure_end)"}
+               ],
+               "encoding": {
+                 "x": {
+                   "timeUnit": "yearmonthdate",
+                   "field": "GitCommitDate",
+                   "type": "temporal"
+                 },
+                 "x2": {
+                   "field": "today",
+                   "timeUnit": "yearmonthdate",
+                   "type": "temporal"
+                 },
+               }
+             }
+           ],
            "encoding": {
-             "href": {"field": "Url", "type": "nominal"},
-             "x": {
-               "timeUnit": "yearmonthdate",
-               "field": "GitCommitDate",
-               "type": "temporal"
-             },
-             "y": {
-               "field": "AbstractSpec",
-               "axis": {"title": "Abstract Specs"}
-             },
+             "y": {"field": "AbstractSpec"},
              "color": {
                "field": "Concretized",
                "type": "nominal",
                "scale": {
-                 "domain": ["true", "false"],
-                 "range": ["#93c47d", "#e06666"]
+                 "domain": ["true", "false", "primary"],
+                 "range": ["#93c47d", "#e06666", "#C490D1"]
                },
                "condition": [
+                 {"test": "datum['Primary'] == true", "value": "#C490D1"},
                  {"test": "datum['Built'] == true", "value": "#93c47d"},
                  {"test": "datum['Built'] == false", "value": "#e06666"}
                ]

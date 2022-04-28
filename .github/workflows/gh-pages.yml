@@ -13,11 +13,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: 'gh-pages'
-          fetch-depth: 0
 
       - name: deploy
         run: |
-          if [[ $(git restore --source origin/${GITHUB_REF##*/} vis) == 0 ]]; then
+          if [[ $(git restore --source origin/main vis) == 0 ]]; then
             cp -r vis/* .
             rm -r vis/
 
