@@ -70,10 +70,73 @@ func (db *DB) getPoint(abstractSpec, gitCommit, concretizer string) (result Infl
 	return result, err
 }
 
-func (db *DB) GetAll() (result []InflectionPoint, err error) {
+// GetPointByID searches for and returns a the corresponding entry from the
+// database if the entry exists.
+func (db *DB) GetPointByID(id string) (result InflectionPoint, err error) {
 	// Attempt to grab lock.
 	db.lock.Lock()
 	defer db.lock.Unlock()
+
+	// Ping the DB and open a connection if necessary
+	err = db.conn.Ping()
+	if err != nil {
+		return result, err
+	}
+
+	// Get and return entry from DB if it exists
+	return db.getPointByID(id)
+}
+
+// get returns the matching entry from the db if it exists.
+func (db *DB) getPointByID(id string) (result InflectionPoint, err error) {
+	tags := ""
+	files := ""
+	row, err := db.conn.Query(
+		`SELECT rowid, * FROM points WHERE rowid = ?`,
+		id,
+	)
+	if err != nil {
+		return result, err
+	}
+	defer row.Close()
+	if !row.Next() {
+		return result, sql.ErrNoRows
+	}
+	err = row.Scan(
+		&result.ID,
+		&result.AbstractSpec,
+		&result.GitCommit,
+		&result.GitAuthorDate,
+		&result.GitCommitDate,
+		&result.Concretizer,
+		&files,
+		&tags,
+		&result.SpecUUID,
+		&result.Built,
+		&result.Concretized,
+		&result.Primary,
+		&result.BuildLogUUID,
+		&result.ConcretizationErrUUID,
+	)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal([]byte(files), &result.Files)
+	if err != nil {
+		return result, err
+	}
+
+	err = json.Unmarshal([]byte(tags), &result.Tags)
+	return result, err
+}
+
+func (db *DB) GetAll(concretizer ...string) (result []InflectionPoint, err error) {
+	// Attempt to grab lock.
+	db.lock.Lock()
+	defer db.lock.Unlock()
+
+	var parameters []interface{}
 
 	// Create files slice with limit as size.
 	result = []InflectionPoint{}
@@ -84,8 +147,18 @@ func (db *DB) GetAll() (result []InflectionPoint, err error) {
 		return result, err
 	}
 
+	query := "SELECT rowid, * FROM points"
+
+	if len(concretizer) > 0 {
+		query += "WHERE concretizer = ?"
+		parameters = append(parameters, concretizer[0])
+	}
+
+	query += ";"
+
 	rows, err := db.conn.Query(
-		"SELECT rowid, * FROM points ORDER BY gitCommitDate;",
+		query,
+		parameters...,
 	)
 	if err != nil {
 		return result, err
@@ -146,10 +219,12 @@ func (db *DB) GetAll() (result []InflectionPoint, err error) {
 	return result, err
 }
 
-func (db *DB) GetAllWithSpec(abstractSpec string) (result []InflectionPoint, err error) {
+func (db *DB) GetAllWithSpec(abstractSpec string, concretizer ...string) (result []InflectionPoint, err error) {
 	// Attempt to grab lock.
 	db.lock.Lock()
 	defer db.lock.Unlock()
+
+	var parameters []interface{}
 
 	// Create files slice with limit as size.
 	result = []InflectionPoint{}
@@ -160,9 +235,19 @@ func (db *DB) GetAllWithSpec(abstractSpec string) (result []InflectionPoint, err
 		return result, err
 	}
 
+	query := "SELECT rowid, * FROM points WHERE abstractSpec = ?"
+	parameters = append(parameters, abstractSpec)
+
+	if len(concretizer) > 0 {
+		query += "AND concretizer = ?"
+		parameters = append(parameters, concretizer[0])
+	}
+
+	query += ";"
+
 	rows, err := db.conn.Query(
-		"SELECT rowid, * FROM points WHERE abstractSpec = ? ORDER BY gitCommitDate;",
-		abstractSpec,
+		query,
+		parameters...,
 	)
 	if err != nil {
 		return result, err

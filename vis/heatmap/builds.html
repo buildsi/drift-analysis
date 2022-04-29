@@ -23,7 +23,7 @@
     <h1>Heatmap of Package Builds</h1>
     <h2>Concretizer: Original</h2>
     <!-- Container for the visualization -->
-    <div id="vis1" style="width: 100%;"></div>
+    <div id="vis1" style="width: 100%; cursor:zoom-in;"></div>
 
     <script>
      // Assign the specification to a local variable vlSpec.
@@ -56,9 +56,11 @@
          },
          {
            "width": "container",
+           "view": {
+             "cursor": "zoom-in"
+           },
            "layer": [
              {
-               "href": {"field": "Url", "type": "nominal"},
                "mark": {"type": "rect", "tooltip": {"content": "data"}},
                "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
                "encoding": {
@@ -141,7 +143,7 @@
 
   <h2>Concretizer: Clingo</h2>
   <!-- Container for the visualization -->
-  <div id="vis2" style="width: 100%;"></div>
+  <div id="vis2" style="width: 100%; cursor:zoom-in;"></div>
 
   <script>
     // Assign the specification to a local variable vlSpec.
@@ -174,9 +176,11 @@
          },
          {
            "width": "container",
+           "view": {
+             "cursor": "zoom-in"
+           },
            "layer": [
              {
-               "href": {"field": "Url", "type": "nominal"},
                "mark": {"type": "rect", "tooltip": {"content": "data"}},
                "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
                "encoding": {

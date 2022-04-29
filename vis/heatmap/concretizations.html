@@ -54,11 +54,15 @@
          },
          {
            "width": "container",
+           "view": {
+             "cursor": "zoom-in"
+           },
            "layer": [
              {
                "mark": {"type": "rect", "tooltip": {"content": "data"}},
                "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
                "encoding": {
+                 "href": {"field": "Url", "type": "nominal"},
                  "x": {
                    "timeUnit": "yearmonthdate",
                    "field": "GitCommitDate",
@@ -126,7 +130,10 @@
                ]
              }
            },
-           "transform": [{"filter": "datum.Concretizer == 'original'"}]
+           "transform": [
+             {"filter": "datum.Concretizer == 'original'"},
+             {"calculate": "'https://drift-server.spack.io/inflection-point/' + datum.ID", "as": "Url"}
+           ]
          }
        ],
        "resolve": {"scale": {"x": "independent", "y": "independent"}}
@@ -139,7 +146,7 @@
 
   <h2>Concretizer: Clingo</h2>
   <!-- Container for the visualization -->
-  <div id="vis2" style="width: 100%;"></div>
+  <div id="vis2" style="width: 100%; cursor:zoom-in;"></div>
 
   <script>
     // Assign the specification to a local variable vlSpec.
@@ -172,11 +179,15 @@
          },
          {
            "width": "container",
+           "view": {
+             "cursor": "zoom-in"
+           },
            "layer": [
              {
                "mark": {"type": "rect", "tooltip": {"content": "data"}},
                "selection": {"scroll_1": {"type": "interval", "bind": "scales"}},
                "encoding": {
+                 "href": {"field": "Url", "type": "nominal"},
                  "x": {
                    "timeUnit": "yearmonthdate",
                    "field": "GitCommitDate",
@@ -244,10 +255,13 @@
                ]
              }
            },
-           "transform": [{"filter": "datum.Concretizer == 'clingo'"}]
+           "transform": [
+             {"filter": "datum.Concretizer == 'clingo'"},
+             {"calculate": "'https://drift-server.spack.io/inflection-point/' + datum.ID", "as": "Url"}
+           ]
          }
        ],
-       "resolve": {"scale": {"x": "independent", "y": "independent"}}
+      "resolve": {"scale": {"x": "independent", "y": "independent"}}
     }
 
    // Embed the visualization in the container with id `vis`

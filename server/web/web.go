@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/buildsi/drift-analysis/server/database"
@@ -42,7 +43,8 @@ func Start(addr string, auth map[string]string, db *database.DB, ds datastore.DS
 	// Setup API endpoints
 	// No Auth GET Opperations
 	r.Get("/artifact/*", h.getArtifact)
-	// r.Get("/inflection-point/*", h.getInflectionPoint)
+	r.Get("/concretizer-diff*", h.getConcretizerDiff)
+	r.Get("/inflection-point/*", h.getInflectionPoint)
 	r.Get("/inflection-points*", h.getInflectionPoints)
 	r.Get("/specs*", h.getSpecs)
 
@@ -60,4 +62,9 @@ func Start(addr string, auth map[string]string, db *database.DB, ds datastore.DS
 
 	// Start http server and listen for incoming connections
 	return http.ListenAndServe(addr, r)
+}
+
+func convertJSON(points []database.InflectionPoint) (string, error) {
+	buf, err := json.Marshal(points)
+	return string(buf), err
 }
