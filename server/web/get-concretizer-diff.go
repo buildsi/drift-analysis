@@ -44,24 +44,20 @@ func (h *handler) getConcretizerDiff(w http.ResponseWriter, r *http.Request) {
 		concretizerMap[point.Concretizer][point.AbstractSpec][point.GitCommit] = point
 	}
 
+	result := []database.InflectionPoint{}
+
 	for concretizer := range concretizerMap {
 		for comparativeConcretizer := range concretizerMap {
 			if concretizer == comparativeConcretizer {
 				continue
 			}
 			for abstractSpec := range concretizerMap[concretizer] {
-				for gitCommit := range concretizerMap[concretizer][abstractSpec] {
-					delete(concretizerMap[comparativeConcretizer][abstractSpec], gitCommit)
-				}
-			}
-		}
-	}
+				for gitCommit, point := range concretizerMap[concretizer][abstractSpec] {
+					if _, ok := concretizerMap[comparativeConcretizer][abstractSpec][gitCommit]; ok {
+						result = append(result, point)
+					}
 
-	result := []database.InflectionPoint{}
-	for concreizer := range concretizerMap {
-		for abstractSpec := range concretizerMap[concreizer] {
-			for _, point := range concretizerMap[concreizer][abstractSpec] {
-				result = append(result, point)
+				}
 			}
 		}
 	}
