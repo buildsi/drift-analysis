@@ -15,7 +15,7 @@ func (h *handler) removeArtifact(w http.ResponseWriter, r *http.Request) {
 	err := h.ds.Delete(uuid)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.NotFound(w, r)
 		return
 	}
 

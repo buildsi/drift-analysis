@@ -71,18 +71,23 @@ func (s *S3) Get(key string) (string, error) {
 		ctx, cancelFn := context.WithTimeout(s.ctx, time.Second*5)
 		defer cancelFn()
 
+		buf := new(strings.Builder)
+
 		obj, err := s.conn.GetObjectWithContext(ctx, &s3.GetObjectInput{
 			Bucket: aws.String(s.bucket),
 			Key:    aws.String(filepath.Join("artifacts", key)),
 		})
 		if err != nil {
-			return "", err
+			return buf, err
 		}
 
-		buf := new(strings.Builder)
 		_, err = io.Copy(buf, obj.Body)
 		return buf, err
 	})
+
+	if err != nil {
+		return "", err
+	}
 
 	return fmt.Sprintf("%v", item.Value()), err
 }

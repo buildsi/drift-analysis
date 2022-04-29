@@ -16,14 +16,14 @@ func (h *handler) getArtifact(w http.ResponseWriter, r *http.Request) {
 	payload, err := h.ds.Get(uuid)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.NotFound(w, r)
 		return
 	}
 
 	artifactType, err := h.db.GetArtifactType(uuid)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.NotFound(w, r)
 		return
 	}
 
