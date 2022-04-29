@@ -30,7 +30,7 @@
      var vlSpec = {
        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
        "data": {
-         "url": "https://drift-server.spack.io/inflection-points",
+         "url": "https://drift-server.spack.io/inflection-points?concretizer=original",
          "format": {"type": "json"}
        },
        "vconcat": [
@@ -150,7 +150,7 @@
     var vlSpec = {
        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
        "data": {
-         "url": "https://drift-server.spack.io/inflection-points",
+         "url": "https://drift-server.spack.io/inflection-points/?concretizer=clingo",
          "format": {"type": "json"}
        },
        "vconcat": [
