@@ -150,7 +150,7 @@ func (db *DB) GetAll(concretizer ...string) (result []InflectionPoint, err error
 	query := "SELECT rowid, * FROM points"
 
 	if len(concretizer) > 0 {
-		query += "WHERE concretizer = ?"
+		query += " WHERE concretizer = ?"
 		parameters = append(parameters, concretizer[0])
 	}
 
@@ -239,7 +239,7 @@ func (db *DB) GetAllWithSpec(abstractSpec string, concretizer ...string) (result
 	parameters = append(parameters, abstractSpec)
 
 	if len(concretizer) > 0 {
-		query += "AND concretizer = ?"
+		query += " AND concretizer = ?"
 		parameters = append(parameters, concretizer[0])
 	}
 
