@@ -174,7 +174,7 @@ $ curl -X PUT -H "Content-Type: application/json" -d @artifact.json https://drif
 
 Response,
 ```json
-{"uuid": 6c01dfe6-c6d5-4858-982b-e1f14ac7bc54}
+{"uuid": "6c01dfe6-c6d5-4858-982b-e1f14ac7bc54"}
 ```
 
 
